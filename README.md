@@ -1,16 +1,85 @@
-# React + Vite
+# stripe3
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+stripe3 is a cross-chain x402 payment gateway for Solana APIs, AI tools, datasets, and paid digital resources.
 
-Currently, two official plugins are available:
+The product idea is simple: a protected resource can respond with `402 Payment Required`, the user pays a Solana invoice, the Solana program stores a receipt PDA, and the backend unlocks access after verifying that receipt.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Current Build Stage
 
-## React Compiler
+This repo currently contains the frontend product foundation:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Vite + React + Tailwind CSS v3
+- fhex402-inspired black-grid interface
+- Split component/page architecture
+- Mock checkout flow for `402 Payment Required`
+- Mock Solana receipt PDA flow
+- Production-mode LI.FI funding panel
+- Agent-mode payment simulator
 
-## Expanding the ESLint configuration
+## Target Architecture
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```text
+frontend/
+  Vite + React + Tailwind UI
+
+backend/
+  x402 gateway server
+  protected resource routes
+  Solana receipt verifier
+
+programs/stripe3/
+  Anchor/Rust Solana program
+  merchant, product, invoice, receipt PDAs
+```
+
+## Hackathon Modes
+
+```text
+Sandbox Mode
+Network: Solana devnet
+Payment: devnet SOL
+Purpose: safe judge testing
+
+Production Mode
+Network: Solana mainnet
+Payment: SOL / USDC
+LI.FI: mainnet cross-chain funding into Solana
+Purpose: real-world checkout path
+```
+
+## Local Development
+
+```bash
+npm install
+npm run dev
+npm run dev:gateway
+```
+
+The gateway mock runs on `http://localhost:4100` and exposes:
+
+```text
+GET  /api/resources
+POST /api/invoices
+GET  /api/protected/:resourceId
+POST /api/receipts
+GET  /api/receipts
+```
+
+## Next Milestones
+
+1. Add the x402 backend gateway.
+2. Add the Anchor program for invoices and receipts.
+3. Wire wallet connect and devnet SOL payment.
+4. Verify receipt PDAs from the backend.
+5. Add LI.FI Widget for production funding.
+6. Deploy frontend, backend, and Solana program.
+
+## Deployment Addresses
+
+To be added after Solana devnet deployment:
+
+```text
+Program ID:
+Cluster:
+Explorer:
+```
