@@ -4,7 +4,7 @@ import { InvoiceCard } from "../components/checkout/InvoiceCard";
 import { LifiFundingPanel } from "../components/checkout/LifiFundingPanel";
 import { ReceiptPanel } from "../components/checkout/ReceiptPanel";
 
-export function Checkout({ resource, mode }) {
+export function Checkout({ resource, mode, onModeChange }) {
   const [paid, setPaid] = useState(false);
 
   return (
@@ -29,7 +29,7 @@ export function Checkout({ resource, mode }) {
         </div>
         <div className="grid gap-6">
           <InvoiceCard resource={resource} mode={mode} />
-          <LifiFundingPanel mode={mode} />
+          <LifiFundingPanel mode={mode} onModeChange={onModeChange} />
         </div>
       </section>
     </div>

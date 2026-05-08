@@ -36,6 +36,10 @@ function App() {
     setActivePage("checkout");
   }
 
+  function toggleMode() {
+    setMode((current) => (current === "sandbox" ? "production" : "sandbox"));
+  }
+
   return (
     <Layout
       activePage={activePage}
@@ -43,17 +47,18 @@ function App() {
       connected={connected}
       onConnect={() => setConnected(true)}
       mode={mode}
-      onModeChange={() => setMode((current) => (current === "sandbox" ? "production" : "sandbox"))}
+      onModeChange={toggleMode}
     >
       <Page
         mode={mode}
+        onModeChange={toggleMode}
         setActivePage={setActivePage}
         resource={selectedResource}
         onOpenCheckout={openCheckout}
       />
       <footer className="site-footer">
         <span>stripe3 / x402 payment gateway for Solana resources</span>
-        <span>Sandbox devnet now. Production LI.FI funding path next.</span>
+        <span>Need Solana funds? Fund through LI.FI in production.</span>
       </footer>
     </Layout>
   );

@@ -1,4 +1,4 @@
-export const demoWallet = "8Rail3aX402SolanaDevnetWallet111111111111111";
+export const connectedWallet = "8Rail3aX402SolanaDevnetWallet111111111111111";
 
 export const navItems = [
   { id: "resources", label: "Resources", glyph: "01" },
@@ -13,15 +13,15 @@ export const networkModes = {
     label: "Sandbox",
     network: "Solana devnet",
     asset: "SOL",
-    lifi: "Production preview",
-    description: "Safe x402 invoice testing with devnet SOL and onchain receipt PDAs.",
+    lifi: "Mainnet only",
+    description: "Test invoices and receipts with devnet SOL.",
   },
   production: {
     label: "Production",
     network: "Solana mainnet",
     asset: "SOL / USDC",
     lifi: "LI.FI widget active",
-    description: "Mainnet checkout path where users can fund Solana from other chains.",
+    description: "Bridge or swap into Solana, then complete payment.",
   },
 };
 
@@ -76,7 +76,7 @@ export const landingFeatures = [
   },
   {
     title: "Fund from any chain",
-    copy: "Production Mode adds LI.FI so users can bridge or swap into Solana before paying.",
+    copy: "Use LI.FI to bridge or swap into Solana before paying.",
   },
 ];
 
@@ -114,7 +114,7 @@ export const agentSteps = [
   },
   {
     label: "Pay",
-    detail: "Agent prepares a devnet SOL payment to the Stripe3 invoice.",
+    detail: "Agent prepares a SOL payment to the Stripe3 invoice.",
     status: "active",
   },
   {

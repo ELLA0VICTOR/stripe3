@@ -35,9 +35,9 @@ export function DataLine({ label, value }) {
   );
 }
 
-export function Field({ label, children }) {
+export function Field({ label, children, className = "" }) {
   return (
-    <label className="grid gap-3">
+    <label className={cn("grid gap-3", className)}>
       <span className="text-sm font-extrabold text-text-secondary">{label}</span>
       {children}
     </label>

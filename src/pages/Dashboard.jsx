@@ -36,8 +36,8 @@ export function Dashboard({ mode }) {
       <section className="section-grid">
         <Panel>
           <div className="panel-title">Live resource queue</div>
-          <p className="panel-copy">Demo resources already configured for the first walkthrough.</p>
-          <div className="timeline mt-8">
+          <p className="panel-copy">Resources configured for checkout.</p>
+          <div className="timeline mt-5">
             {resources.map((resource, index) => (
               <div className="timeline-row" key={resource.id}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
@@ -52,14 +52,14 @@ export function Dashboard({ mode }) {
         </Panel>
 
         <Panel>
-          <div className="panel-title">Judge-ready story</div>
+          <div className="panel-title">System path</div>
           <p className="panel-copy">
-            Sandbox Mode proves the Solana x402 receipt flow safely. Production Mode shows the mainnet LI.FI funding route.
+            Sandbox handles devnet receipts. Production enables LI.FI funding.
           </p>
-          <div className="data-list mt-7">
-            <DataLine label="Track fit" value="Solana + LI.FI + x402" />
-            <DataLine label="Core proof" value="Receipt PDA" />
-            <DataLine label="User pull" value="Paid resources" />
+          <div className="data-list mt-5">
+            <DataLine label="Payment" value="x402" />
+            <DataLine label="Proof" value="Receipt PDA" />
+            <DataLine label="Funding" value="LI.FI" />
           </div>
         </Panel>
       </section>

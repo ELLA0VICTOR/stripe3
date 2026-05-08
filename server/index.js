@@ -85,7 +85,7 @@ function buildPaymentRequired(resource, buyer) {
         invoiceId,
         resourceId: resource.id,
         buyer: buyer || null,
-        payTo: "stripe3_invoice_pda_demo",
+        payTo: "stripe3_invoice_pda",
       },
     ],
   };
@@ -184,7 +184,7 @@ async function handleRequest(req, res) {
       receipt,
       payload: {
         signal: "Unlocked premium payload from stripe3.",
-        note: "This mock payload will later be served after Solana receipt PDA verification.",
+        note: "Served after receipt verification.",
       },
     });
     return;

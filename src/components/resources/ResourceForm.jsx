@@ -2,13 +2,15 @@ import { Button, Field, Panel, Select, TextArea, TextInput } from "../ui";
 
 export function ResourceForm() {
   return (
-    <Panel>
-      <div className="panel-title">Create paid resource</div>
-      <p className="panel-copy">
-        Register an API, AI tool, dataset, file, or paid page.
-      </p>
+    <Panel className="resource-form">
+      <div>
+        <div className="panel-title">Create paid resource</div>
+        <p className="panel-copy">
+          Register an API, AI tool, dataset, file, or paid page.
+        </p>
+      </div>
 
-      <div className="mt-5 grid gap-4">
+      <div className="resource-form-grid">
         <Field label="Resource name">
           <TextInput placeholder="Premium Solana Signal API" />
         </Field>
@@ -23,10 +25,12 @@ export function ResourceForm() {
         <Field label="Price in SOL">
           <TextInput placeholder="0.003" />
         </Field>
-        <Field label="Description">
+        <Field label="Description" className="form-wide">
           <TextArea placeholder="Explain what the user unlocks after payment." />
         </Field>
-        <Button>Create product</Button>
+        <div className="form-submit">
+          <Button>Create product</Button>
+        </div>
       </div>
     </Panel>
   );

@@ -18,12 +18,13 @@ export function Resources({ onOpenCheckout }) {
         </div>
       </header>
 
-      <section className="section-grid">
-        <div className="grid gap-6">
-          {resources.map((resource) => (
-            <ResourceCard key={resource.id} resource={resource} onOpenCheckout={onOpenCheckout} />
-          ))}
-        </div>
+      <section className="resource-grid">
+        {resources.map((resource) => (
+          <ResourceCard key={resource.id} resource={resource} onOpenCheckout={onOpenCheckout} />
+        ))}
+      </section>
+
+      <section>
         <ResourceForm />
       </section>
     </div>

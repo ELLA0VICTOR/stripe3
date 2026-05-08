@@ -1,6 +1,6 @@
-import { demoWallet, navItems } from "../../lib/data";
+import { connectedWallet, navItems } from "../../lib/data";
 import { formatAddress } from "../../lib/utils";
-import { Button, Badge } from "../ui";
+import { Button } from "../ui";
 import { LogoMark } from "../ui/Logo";
 
 export function TopBar({ activePage, setActivePage, connected, onConnect, mode, onModeChange }) {
@@ -10,7 +10,7 @@ export function TopBar({ activePage, setActivePage, connected, onConnect, mode, 
     <header className="topbar">
       <button type="button" className="brand" onClick={() => setActivePage("landing")}>
         <span className="brand-mark">
-          <LogoMark className="h-5 w-5" />
+          <LogoMark className="h-6 w-6" />
         </span>
         <span>stripe3</span>
       </button>
@@ -19,7 +19,7 @@ export function TopBar({ activePage, setActivePage, connected, onConnect, mode, 
         <button type="button" onClick={() => setActivePage("landing")} className={activePage === "landing" ? "active" : ""}>
           Overview
         </button>
-        {navItems.slice(0, 3).map((item) => (
+        {navItems.map((item) => (
           <button
             key={item.id}
             type="button"
@@ -33,9 +33,10 @@ export function TopBar({ activePage, setActivePage, connected, onConnect, mode, 
 
       <div className="topbar-actions">
         {inWorkspace && (
-          <Badge tone={mode === "sandbox" ? "blue" : "green"}>
+          <span className={`mode-badge ${mode === "sandbox" ? "sandbox" : "production"}`}>
+            <LogoMark className="mode-badge-mark" />
             {mode === "sandbox" ? "Sandbox" : "Production"}
-          </Badge>
+          </span>
         )}
         {inWorkspace && (
           <Button variant="secondary" onClick={onModeChange}>
@@ -43,7 +44,7 @@ export function TopBar({ activePage, setActivePage, connected, onConnect, mode, 
           </Button>
         )}
         {connected ? (
-          <Button variant="secondary">{formatAddress(demoWallet)}</Button>
+          <Button variant="secondary">{formatAddress(connectedWallet)}</Button>
         ) : (
           <Button onClick={onConnect}>Connect</Button>
         )}

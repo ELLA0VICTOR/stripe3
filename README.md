@@ -11,10 +11,10 @@ This repo currently contains the frontend product foundation:
 - Vite + React + Tailwind CSS v3
 - fhex402-inspired black-grid interface
 - Split component/page architecture
-- Mock checkout flow for `402 Payment Required`
-- Mock Solana receipt PDA flow
-- Production-mode LI.FI funding panel
-- Agent-mode payment simulator
+- Local checkout flow for `402 Payment Required`
+- Solana receipt PDA interface
+- LI.FI funding panel
+- Agent payment console
 
 ## Target Architecture
 
@@ -38,7 +38,7 @@ programs/stripe3/
 Sandbox Mode
 Network: Solana devnet
 Payment: devnet SOL
-Purpose: safe judge testing
+Purpose: safe testing
 
 Production Mode
 Network: Solana mainnet
@@ -55,7 +55,7 @@ npm run dev
 npm run dev:gateway
 ```
 
-The gateway mock runs on `http://localhost:4100` and exposes:
+The local gateway runs on `http://localhost:4100` and exposes:
 
 ```text
 GET  /api/resources

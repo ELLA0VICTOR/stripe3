@@ -1,6 +1,6 @@
 import { Badge, Button, Panel } from "../ui";
 
-export function LifiFundingPanel({ mode }) {
+export function LifiFundingPanel({ mode, onModeChange }) {
   const production = mode === "production";
 
   return (
@@ -49,7 +49,11 @@ export function LifiFundingPanel({ mode }) {
         </div>
       </div>
 
-      <Button className="mt-5 w-full" variant={production ? "primary" : "secondary"}>
+      <Button
+        className="mt-5 w-full"
+        variant={production ? "primary" : "secondary"}
+        onClick={production ? undefined : onModeChange}
+      >
         {production ? "Fund with LI.FI" : "Switch to production"}
       </Button>
     </Panel>
