@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Layout } from "./components/layout/Layout";
 import { CookieConsent } from "./components/layout/CookieConsent";
 import { PaymentModal } from "./components/checkout/PaymentModal";
 import { UnlockedContentModal } from "./components/checkout/UnlockedContentModal";
+import { TakeDownResourceModal } from "./components/resources/TakeDownResourceModal";
 import { resources as seededResources } from "./lib/data";
-import { fetchResources } from "./lib/gatewayClient";
+import { fetchResources, takeDownResource } from "./lib/gatewayClient";
+import { setProductActive } from "./lib/stripe3Program";
 import { getResourceById } from "./lib/utils";
 import { Landing } from "./pages/Landing";
 import { Resources } from "./pages/Resources";
@@ -19,6 +22,8 @@ const pageMap = {
 };
 
 function App() {
+  const wallet = useAnchorWallet();
+  const { connection } = useConnection();
   const [activePage, setActivePage] = useState("landing");
   const [mode, setMode] = useState("devnet");
   const [resourceList, setResourceList] = useState(seededResources);
@@ -29,6 +34,8 @@ function App() {
   const [paymentStarted, setPaymentStarted] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
   const [showUnlockedContent, setShowUnlockedContent] = useState(false);
+  const [takeDownCandidate, setTakeDownCandidate] = useState(null);
+  const [takingDownResourceId, setTakingDownResourceId] = useState("");
   const unlockTimerRef = useRef(null);
 
   const selectedResource = useMemo(
@@ -103,6 +110,45 @@ function App() {
     setSelectedResourceId(resource.id);
   }
 
+  function handleTakeDownResource(resource) {
+    setResourcesError("");
+
+    if (!wallet?.publicKey) {
+      setResourcesError("Connect the seller wallet before taking down a listing.");
+      return;
+    }
+
+    if (wallet.publicKey.toBase58() !== resource.merchant) {
+      setResourcesError("Only the seller wallet can take down this listing.");
+      return;
+    }
+
+    setTakeDownCandidate(resource);
+  }
+
+  async function confirmTakeDownResource() {
+    if (!takeDownCandidate) return;
+
+    try {
+      const resource = takeDownCandidate;
+      setTakingDownResourceId(resource.id);
+      await setProductActive({ connection, wallet, resource, active: false });
+      await takeDownResource(resource);
+
+      const nextResources = resourceList.filter((item) => item.id !== resource.id);
+      setResourceList(nextResources);
+
+      if (selectedResourceId === resource.id) {
+        setSelectedResourceId(nextResources[0]?.id || "");
+      }
+      setTakeDownCandidate(null);
+    } catch (error) {
+      setResourcesError(error.message || "Unable to take down listing.");
+    } finally {
+      setTakingDownResourceId("");
+    }
+  }
+
   return (
     <Layout
       activePage={activePage}
@@ -122,12 +168,20 @@ function App() {
         resourcesError={resourcesError}
         onResourceCreated={handleResourceCreated}
         onPurchaseResource={openPayment}
+        onTakeDownResource={handleTakeDownResource}
+        takingDownResourceId={takingDownResourceId}
       />
       <PaymentModal
         resource={paymentResourceId ? getResourceById(resourceList, paymentResourceId) : null}
         mode={mode}
         onClose={() => setPaymentResourceId(null)}
         onConfirm={confirmPayment}
+      />
+      <TakeDownResourceModal
+        resource={takeDownCandidate}
+        busy={Boolean(takingDownResourceId)}
+        onCancel={() => setTakeDownCandidate(null)}
+        onConfirm={confirmTakeDownResource}
       />
       {showUnlockedContent && (
         <UnlockedContentModal

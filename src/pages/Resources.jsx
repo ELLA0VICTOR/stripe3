@@ -7,6 +7,8 @@ export function Resources({
   resourcesError,
   onPurchaseResource,
   onResourceCreated,
+  onTakeDownResource,
+  takingDownResourceId,
 }) {
   return (
     <div className="page-stack">
@@ -40,7 +42,13 @@ export function Resources({
           </div>
         )}
         {resources.map((resource) => (
-          <ResourceCard key={resource.id} resource={resource} onPurchaseResource={onPurchaseResource} />
+          <ResourceCard
+            key={resource.id}
+            resource={resource}
+            onPurchaseResource={onPurchaseResource}
+            onTakeDownResource={onTakeDownResource}
+            takingDown={takingDownResourceId === resource.id}
+          />
         ))}
       </section>
 

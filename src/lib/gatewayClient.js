@@ -44,6 +44,21 @@ export async function registerResource(resource) {
   return body.resource;
 }
 
+export async function takeDownResource(resource) {
+  const response = await fetch(gatewayUrl(`/api/resources/${resource.id}`), {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ merchant: resource.merchant }),
+  });
+  const body = await response.json();
+
+  if (!response.ok) {
+    throw new Error(body.error || "Unable to take down resource.");
+  }
+
+  return body.resource;
+}
+
 export async function requestPaymentTerms(resource, buyer) {
   const response = await fetch(protectedUrl(resource, buyer), {
     headers: buyer ? { "X-Stripe3-Buyer": buyer } : {},

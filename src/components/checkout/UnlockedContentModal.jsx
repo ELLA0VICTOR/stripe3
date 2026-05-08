@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { formatAddress } from "../../lib/utils";
 import { Badge, Button, DataLine, Panel } from "../ui";
 
@@ -6,9 +7,19 @@ function getUnlockedContent(paymentResult) {
 }
 
 export function UnlockedContentModal({ paymentResult, onClose }) {
+  const [copied, setCopied] = useState(false);
+
   if (!paymentResult) return null;
 
   const content = getUnlockedContent(paymentResult);
+
+  async function copyContent() {
+    if (!navigator.clipboard) return;
+
+    await navigator.clipboard.writeText(content);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  }
 
   return (
     <div className="modal-backdrop" role="presentation">
@@ -22,6 +33,11 @@ export function UnlockedContentModal({ paymentResult, onClose }) {
           <button className="modal-close" type="button" onClick={onClose} aria-label="Close unlocked content modal">
             X
           </button>
+        </div>
+
+        <div className="unlocked-content-head">
+          <span>Unlocked payload</span>
+          <Button variant="secondary" onClick={copyContent}>{copied ? "Copied" : "Copy"}</Button>
         </div>
 
         <div className="unlocked-content-box">

@@ -1,8 +1,12 @@
+import { useWallet } from "@solana/wallet-adapter-react";
 import { GATEWAY_URL } from "../../lib/gatewayClient";
 import { formatAddress, formatLamports } from "../../lib/utils";
 import { Badge, Button, DataLine, Panel } from "../ui";
 
-export function ResourceCard({ resource, onPurchaseResource }) {
+export function ResourceCard({ resource, onPurchaseResource, onTakeDownResource, takingDown }) {
+  const { publicKey } = useWallet();
+  const sellerCanManage = publicKey?.toBase58() === resource.merchant;
+
   function copyEndpoint() {
     const url = `${GATEWAY_URL.replace(/\/$/, "")}${resource.endpoint}`;
     navigator.clipboard?.writeText(url);
@@ -30,9 +34,19 @@ export function ResourceCard({ resource, onPurchaseResource }) {
         <DataLine label="Merchant" value={formatAddress(resource.merchant)} />
       </div>
 
-      <div className="resource-actions">
+      <div className={`resource-actions ${sellerCanManage ? "has-management" : ""}`}>
         <Button onClick={() => onPurchaseResource(resource.id)}>Purchase access</Button>
         <Button variant="secondary" onClick={copyEndpoint}>Copy x402 URL</Button>
+        {sellerCanManage && (
+          <Button
+            variant="ghost"
+            className="take-down-button"
+            disabled={takingDown}
+            onClick={() => onTakeDownResource(resource)}
+          >
+            {takingDown ? "Taking down..." : "Take down"}
+          </Button>
+        )}
       </div>
     </Panel>
   );

@@ -75,6 +75,33 @@ export async function createProduct({ connection, wallet, resource }) {
 
 }
 
+export async function setProductActive({ connection, wallet, resource, active }) {
+  if (!wallet?.publicKey) {
+    throw new Error("Connect a Solana wallet first.");
+  }
+
+  if (wallet.publicKey.toBase58() !== resource.merchant) {
+    throw new Error("Connect the seller wallet for this resource.");
+  }
+
+  const program = createStripe3Program(connection, wallet);
+  const product = getProductPda(resource);
+
+  const signature = await program.methods
+    .setProductActive(resource.id, active)
+    .accountsStrict({
+      merchant: wallet.publicKey,
+      product,
+    })
+    .rpc();
+
+  return {
+    signature,
+    product: product.toBase58(),
+    active,
+  };
+}
+
 export async function payForResource({ connection, wallet, resource }) {
   if (!wallet?.publicKey) {
     throw new Error("Connect a Solana wallet first.");

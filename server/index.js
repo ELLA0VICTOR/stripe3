@@ -27,7 +27,7 @@ function sendJson(res, statusCode, payload, headers = {}) {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": `Content-Type, X-Stripe3-Buyer, ${PAYMENT_SIGNATURE_HEADER}`,
     "Access-Control-Expose-Headers": `${PAYMENT_REQUIRED_HEADER}, ${PAYMENT_RESPONSE_HEADER}`,
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
     ...headers,
   });
   res.end(JSON.stringify(payload, null, 2));
@@ -151,6 +151,24 @@ function getReceiptPda(resource, buyer) {
     [Buffer.from("receipt"), product.toBuffer(), new PublicKey(buyer).toBuffer()],
     PROGRAM_ID,
   )[0];
+}
+
+function decodeProductAccount(data) {
+  const merchant = new PublicKey(data.subarray(8, 40));
+  const productIdLength = data.readUInt32LE(40);
+  const productIdStart = 44;
+  const productIdEnd = productIdStart + productIdLength;
+  const productId = data.subarray(productIdStart, productIdEnd).toString("utf8");
+  const priceOffset = productIdEnd;
+  const priceLamports = Number(data.readBigUInt64LE(priceOffset));
+  const active = data[priceOffset + 8] === 1;
+
+  return {
+    merchant: merchant.toBase58(),
+    productId,
+    priceLamports,
+    active,
+  };
 }
 
 async function findOnchainReceipt(resource, buyer) {
@@ -299,6 +317,44 @@ async function registerResource(body) {
   return storedResource;
 }
 
+async function takeDownResource(resourceId, body) {
+  const storedResources = await readStoredResources();
+  const resource = storedResources.find((item) => item.id === resourceId);
+
+  if (!resource) {
+    throw new Error("Resource was not found in the merchant catalog.");
+  }
+
+  if (body.merchant !== resource.merchant) {
+    throw new Error("Only the resource merchant can take this listing down.");
+  }
+
+  const productPda = getProductPda(resource);
+  const productAccount = await connection.getAccountInfo(productPda, "confirmed");
+
+  if (!productAccount || !productAccount.owner.equals(PROGRAM_ID)) {
+    throw new Error("Product PDA was not found on-chain.");
+  }
+
+  const product = decodeProductAccount(productAccount.data);
+
+  if (product.merchant !== resource.merchant || product.productId !== resource.id) {
+    throw new Error("On-chain product data does not match this listing.");
+  }
+
+  if (product.active) {
+    throw new Error("Product is still active on-chain. Sign the seller take-down transaction first.");
+  }
+
+  const remainingResources = storedResources.filter((item) => item.id !== resource.id);
+  await writeStoredResources(remainingResources);
+
+  return {
+    ...resource,
+    productPda: productPda.toBase58(),
+  };
+}
+
 async function handleRequest(req, res) {
   if (req.method === "OPTIONS") {
     sendJson(res, 204, {});
@@ -324,6 +380,19 @@ async function handleRequest(req, res) {
     try {
       const resource = await registerResource(body);
       sendJson(res, 201, { ok: true, resource });
+    } catch (error) {
+      sendJson(res, 400, { ok: false, error: error.message });
+    }
+    return;
+  }
+
+  if (url.pathname.startsWith("/api/resources/") && req.method === "DELETE") {
+    const resourceId = url.pathname.replace("/api/resources/", "").toLowerCase();
+    const body = await readBody(req);
+
+    try {
+      const resource = await takeDownResource(resourceId, body);
+      sendJson(res, 200, { ok: true, resource });
     } catch (error) {
       sendJson(res, 400, { ok: false, error: error.message });
     }
