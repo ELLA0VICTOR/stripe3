@@ -1,21 +1,94 @@
+import { useState } from "react";
+import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
+import { registerResource } from "../../lib/gatewayClient";
+import { createProduct } from "../../lib/stripe3Program";
+import { slugifyResourceId, solToLamports } from "../../lib/utils";
 import { Button, Field, Panel, Select, TextArea, TextInput } from "../ui";
 
-export function ResourceForm() {
+const typeLabels = {
+  api: "API",
+  agent: "AI tool",
+  dataset: "Dataset",
+  file: "Digital file",
+};
+
+export function ResourceForm({ onResourceCreated }) {
+  const wallet = useAnchorWallet();
+  const { connection } = useConnection();
+  const [title, setTitle] = useState("");
+  const [type, setType] = useState("api");
+  const [price, setPrice] = useState("0.003");
+  const [description, setDescription] = useState("");
+  const [protectedContent, setProtectedContent] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+
+    if (!wallet?.publicKey) {
+      setError("Connect your Solana wallet before creating a product.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const resource = {
+        id: slugifyResourceId(title),
+        title: title.trim(),
+        type: typeLabels[type],
+        priceLamports: solToLamports(price),
+        merchant: wallet.publicKey.toBase58(),
+        status: "Live",
+        endpoint: "",
+        description: description.trim(),
+        protectedContent: protectedContent.trim(),
+      };
+
+      const product = await createProduct({ connection, wallet, resource });
+      const savedResource = await registerResource({
+        ...resource,
+        productPda: product.product,
+        creationSignature: product.signature,
+      });
+
+      onResourceCreated?.(savedResource);
+      setMessage("Product is live. Buyers can now pay and unlock it.");
+      setTitle("");
+      setType("api");
+      setPrice("0.003");
+      setDescription("");
+      setProtectedContent("");
+    } catch (formError) {
+      setError(formError.message || "Unable to create product.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <Panel className="resource-form">
       <div>
         <div className="panel-title">Create paid resource</div>
         <p className="panel-copy">
-          Register an API, AI tool, dataset, file, or paid page.
+          Register an API, AI tool, dataset, file, or paid page. The product is created on Solana first, then the gateway stores the access metadata.
         </p>
       </div>
 
-      <div className="resource-form-grid">
+      <form className="resource-form-grid" onSubmit={handleSubmit}>
         <Field label="Resource name">
-          <TextInput placeholder="Premium Solana Signal API" />
+          <TextInput
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Premium Solana Signal API"
+            required
+          />
         </Field>
         <Field label="Resource type">
-          <Select defaultValue="api">
+          <Select value={type} onChange={(event) => setType(event.target.value)}>
             <option value="api">API endpoint</option>
             <option value="agent">AI tool</option>
             <option value="dataset">Dataset</option>
@@ -23,15 +96,38 @@ export function ResourceForm() {
           </Select>
         </Field>
         <Field label="Price in SOL">
-          <TextInput placeholder="0.003" />
+          <TextInput
+            value={price}
+            onChange={(event) => setPrice(event.target.value)}
+            inputMode="decimal"
+            placeholder="0.003"
+            required
+          />
         </Field>
         <Field label="Description" className="form-wide">
-          <TextArea placeholder="Explain what the user unlocks after payment." />
+          <TextArea
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Explain what the user unlocks after payment."
+            required
+          />
+        </Field>
+        <Field label="Protected content" className="form-wide">
+          <TextArea
+            value={protectedContent}
+            onChange={(event) => setProtectedContent(event.target.value)}
+            placeholder="Paste the private response, link, API credential note, or dataset instructions buyers should receive."
+            required
+          />
         </Field>
         <div className="form-submit">
-          <Button>Create product</Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Creating..." : "Create product"}
+          </Button>
         </div>
-      </div>
+        {message && <div className="form-status">{message}</div>}
+        {error && <div className="form-status error">{error}</div>}
+      </form>
     </Panel>
   );
 }

@@ -1,9 +1,12 @@
 /* global process */
 
 import http from "node:http";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Buffer } from "node:buffer";
-import { resources } from "../src/lib/data.js";
+import { resources as seededResources } from "../src/lib/data.js";
 import idl from "../src/idl/stripe3.json" with { type: "json" };
 
 const PORT = process.env.PORT || 4100;
@@ -13,6 +16,10 @@ const connection = new Connection(RPC_URL, "confirmed");
 const PAYMENT_REQUIRED_HEADER = "PAYMENT-REQUIRED";
 const PAYMENT_SIGNATURE_HEADER = "PAYMENT-SIGNATURE";
 const PAYMENT_RESPONSE_HEADER = "PAYMENT-RESPONSE";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DATA_DIR = process.env.STRIPE3_DATA_DIR || path.join(__dirname, "..", ".data");
+const RESOURCE_STORE = path.join(DATA_DIR, "resources.json");
+const PRODUCT_ID_PATTERN = /^[a-z0-9][a-z0-9-]{2,31}$/;
 
 function sendJson(res, statusCode, payload, headers = {}) {
   res.writeHead(statusCode, {
@@ -57,7 +64,76 @@ function readBody(req) {
   });
 }
 
-function getResource(resourceId) {
+function cleanText(value, fallback = "", maxLength = 240) {
+  const text = String(value || fallback).trim();
+  return text.slice(0, maxLength);
+}
+
+function normalizeResource(input) {
+  const id = cleanText(input.id, "", 32).toLowerCase();
+  const title = cleanText(input.title, "", 80);
+  const type = cleanText(input.type, "API", 24);
+  const description = cleanText(input.description, "", 320);
+  const protectedContent = cleanText(input.protectedContent, "", 1000);
+  const merchant = cleanText(input.merchant, "", 64);
+  const priceLamports = Number(input.priceLamports);
+
+  if (!PRODUCT_ID_PATTERN.test(id)) {
+    throw new Error("Resource id must be 3-32 lowercase letters, numbers, or hyphens.");
+  }
+
+  if (!title) {
+    throw new Error("Resource title is required.");
+  }
+
+  if (!Number.isSafeInteger(priceLamports) || priceLamports <= 0) {
+    throw new Error("Price must be a positive lamport amount.");
+  }
+
+  new PublicKey(merchant);
+
+  return {
+    id,
+    title,
+    type,
+    priceLamports,
+    merchant,
+    status: "Live",
+    endpoint: `/api/protected/${id}`,
+    description,
+    protectedContent,
+    source: "merchant",
+    createdAt: input.createdAt || new Date().toISOString(),
+  };
+}
+
+async function readStoredResources() {
+  try {
+    const file = await fs.readFile(RESOURCE_STORE, "utf8");
+    const parsed = JSON.parse(file);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    if (error.code === "ENOENT") return [];
+    throw error;
+  }
+}
+
+async function writeStoredResources(resources) {
+  await fs.mkdir(DATA_DIR, { recursive: true });
+  await fs.writeFile(RESOURCE_STORE, JSON.stringify(resources, null, 2));
+}
+
+async function getAllResources() {
+  const storedResources = await readStoredResources();
+  const seededIds = new Set(seededResources.map((resource) => resource.id));
+  return [
+    ...seededResources,
+    ...storedResources.filter((resource) => !seededIds.has(resource.id)),
+  ];
+}
+
+async function getResource(resourceId) {
+  const resources = await getAllResources();
   return resources.find((resource) => resource.id === resourceId);
 }
 
@@ -101,6 +177,7 @@ async function findOnchainReceipt(resource, buyer) {
 
 async function findAllOnchainReceipts(buyer) {
   if (!buyer) return [];
+  const resources = await getAllResources();
 
   const receipts = await Promise.all(
     resources.map(async (resource) => {
@@ -196,6 +273,32 @@ function buildPaymentRequired(resource, buyer) {
   };
 }
 
+async function registerResource(body) {
+  const resource = normalizeResource(body);
+  const resources = await getAllResources();
+
+  if (resources.some((item) => item.id === resource.id)) {
+    throw new Error("A resource with this id already exists.");
+  }
+
+  const productPda = getProductPda(resource);
+  const productAccount = await connection.getAccountInfo(productPda, "confirmed");
+
+  if (!productAccount || !productAccount.owner.equals(PROGRAM_ID)) {
+    throw new Error("Product PDA was not found on-chain. Create the Solana product first.");
+  }
+
+  const storedResources = await readStoredResources();
+  const storedResource = {
+    ...resource,
+    productPda: productPda.toBase58(),
+    creationSignature: cleanText(body.creationSignature, "", 120),
+  };
+
+  await writeStoredResources([...storedResources, storedResource]);
+  return storedResource;
+}
+
 async function handleRequest(req, res) {
   if (req.method === "OPTIONS") {
     sendJson(res, 204, {});
@@ -210,13 +313,26 @@ async function handleRequest(req, res) {
   }
 
   if (url.pathname === "/api/resources" && req.method === "GET") {
+    const resources = await getAllResources();
     sendJson(res, 200, { ok: true, resources });
+    return;
+  }
+
+  if (url.pathname === "/api/resources" && req.method === "POST") {
+    const body = await readBody(req);
+
+    try {
+      const resource = await registerResource(body);
+      sendJson(res, 201, { ok: true, resource });
+    } catch (error) {
+      sendJson(res, 400, { ok: false, error: error.message });
+    }
     return;
   }
 
   if (url.pathname === "/api/invoices" && req.method === "POST") {
     const body = await readBody(req);
-    const resource = getResource(body.resourceId);
+    const resource = await getResource(body.resourceId);
 
     if (!resource) {
       sendJson(res, 404, { ok: false, error: "Resource not found" });
@@ -239,7 +355,7 @@ async function handleRequest(req, res) {
 
   if (url.pathname.startsWith("/api/protected/") && req.method === "GET") {
     const resourceId = url.pathname.replace("/api/protected/", "");
-    const resource = getResource(resourceId);
+    const resource = await getResource(resourceId);
     const buyer = req.headers["x-stripe3-buyer"] || url.searchParams.get("buyer");
 
     if (!resource) {
@@ -276,7 +392,7 @@ async function handleRequest(req, res) {
         unlocked: true,
         receipt: verification.receipt,
         payload: {
-          signal: "Unlocked premium payload from stripe3.",
+          signal: resource.protectedContent || `Unlocked ${resource.title}.`,
           note: "Served after x402 payment and receipt verification.",
         },
       }, {
@@ -291,7 +407,7 @@ async function handleRequest(req, res) {
       unlocked: true,
       receipt,
       payload: {
-        signal: "Unlocked premium payload from stripe3.",
+        signal: resource.protectedContent || `Unlocked ${resource.title}.`,
         note: "Served after receipt verification.",
       },
     }, {

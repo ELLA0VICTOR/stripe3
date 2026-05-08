@@ -536,6 +536,23 @@ a {
   align-items: end;
 }
 
+.form-status {
+  grid-column: 1 / -1;
+  border: 1px solid rgba(73, 255, 138, 0.25);
+  background: rgba(73, 255, 138, 0.06);
+  padding: 12px 14px;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.form-status.error {
+  border-color: rgba(255, 104, 104, 0.28);
+  background: rgba(255, 104, 104, 0.07);
+  color: var(--red);
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -623,16 +640,16 @@ a {
 
 .lifi-widget-shell {
   margin-top: 16px;
-  height: min(720px, calc(100vh - 260px));
-  min-height: 560px;
-  overflow: hidden;
+  height: min(720px, calc(100vh - 220px));
+  min-height: 520px;
+  overflow: auto;
   border: 1px solid var(--line-strong);
   background: #030303;
 }
 
 .lifi-widget-shell > div {
   width: 100%;
-  height: 100%;
+  min-height: 620px;
 }
 
 .funding-note button {

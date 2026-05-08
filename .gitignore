@@ -40,6 +40,8 @@ target/deploy
 *.dll
 
 # Local storage / databases
+.data
+server-data
 *.db
 *.sqlite
 *.sqlite3

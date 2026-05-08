@@ -1,7 +1,13 @@
+import { GATEWAY_URL } from "../../lib/gatewayClient";
 import { formatAddress, formatLamports } from "../../lib/utils";
 import { Badge, Button, DataLine, Panel } from "../ui";
 
 export function ResourceCard({ resource, onPurchaseResource }) {
+  function copyEndpoint() {
+    const url = `${GATEWAY_URL.replace(/\/$/, "")}${resource.endpoint}`;
+    navigator.clipboard?.writeText(url);
+  }
+
   return (
     <Panel className="resource-card grid gap-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -26,7 +32,7 @@ export function ResourceCard({ resource, onPurchaseResource }) {
 
       <div className="resource-actions">
         <Button onClick={() => onPurchaseResource(resource.id)}>Purchase access</Button>
-        <Button variant="secondary">Copy x402 URL</Button>
+        <Button variant="secondary" onClick={copyEndpoint}>Copy x402 URL</Button>
       </div>
     </Panel>
   );

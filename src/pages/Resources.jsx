@@ -1,8 +1,13 @@
 import { ResourceCard } from "../components/resources/ResourceCard";
 import { ResourceForm } from "../components/resources/ResourceForm";
-import { resources } from "../lib/data";
 
-export function Resources({ onPurchaseResource }) {
+export function Resources({
+  resources = [],
+  resourcesLoading,
+  resourcesError,
+  onPurchaseResource,
+  onResourceCreated,
+}) {
   return (
     <div className="page-stack">
       <header className="page-header">
@@ -18,14 +23,21 @@ export function Resources({ onPurchaseResource }) {
         </div>
       </header>
 
+      {resourcesError && (
+        <div className="form-status error">
+          Gateway notice: {resourcesError}
+        </div>
+      )}
+
       <section className="resource-grid">
+        {resourcesLoading && <div className="panel-copy">Loading resources...</div>}
         {resources.map((resource) => (
           <ResourceCard key={resource.id} resource={resource} onPurchaseResource={onPurchaseResource} />
         ))}
       </section>
 
       <section>
-        <ResourceForm />
+        <ResourceForm onResourceCreated={onResourceCreated} />
       </section>
     </div>
   );

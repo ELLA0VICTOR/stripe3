@@ -18,6 +18,32 @@ function protectedUrl(resource, buyer) {
   return url.toString();
 }
 
+export async function fetchResources() {
+  const response = await fetch(gatewayUrl("/api/resources"));
+  const body = await response.json();
+
+  if (!response.ok) {
+    throw new Error(body.error || "Unable to fetch resources.");
+  }
+
+  return body.resources || [];
+}
+
+export async function registerResource(resource) {
+  const response = await fetch(gatewayUrl("/api/resources"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(resource),
+  });
+  const body = await response.json();
+
+  if (!response.ok) {
+    throw new Error(body.error || "Unable to register resource.");
+  }
+
+  return body.resource;
+}
+
 export async function requestPaymentTerms(resource, buyer) {
   const response = await fetch(protectedUrl(resource, buyer), {
     headers: buyer ? { "X-Stripe3-Buyer": buyer } : {},

@@ -1,7 +1,7 @@
-import { networkModes, resources, stats } from "../lib/data";
+import { networkModes, stats } from "../lib/data";
 import { MetricCard, Panel, Badge, DataLine } from "../components/ui";
 
-export function Dashboard({ mode }) {
+export function Dashboard({ mode, resources = [] }) {
   const activeMode = networkModes[mode];
 
   return (
