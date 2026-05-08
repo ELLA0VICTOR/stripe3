@@ -1,7 +1,52 @@
-import { receipts } from "../lib/data";
-import { Badge, DataLine, Panel } from "../components/ui";
+import { useEffect, useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { fetchReceiptsForBuyer } from "../lib/gatewayClient";
+import { formatAddress, formatLamports } from "../lib/utils";
+import { Badge, Button, DataLine, Panel } from "../components/ui";
 
 export function Receipts() {
+  const { publicKey } = useWallet();
+  const [receipts, setReceipts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const buyer = publicKey?.toBase58();
+
+  async function loadReceipts() {
+    setError("");
+
+    if (!buyer) {
+      setReceipts([]);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setReceipts(await fetchReceiptsForBuyer(buyer));
+    } catch (receiptError) {
+      setError(receiptError.message || "Unable to load receipts.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!buyer) return;
+
+    let ignore = false;
+
+    fetchReceiptsForBuyer(buyer)
+      .then((data) => {
+        if (!ignore) setReceipts(data);
+      })
+      .catch((receiptError) => {
+        if (!ignore) setError(receiptError.message || "Unable to load receipts.");
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [buyer]);
+
   return (
     <div className="page-stack">
       <header className="page-header">
@@ -12,25 +57,44 @@ export function Receipts() {
           </div>
           <h1 className="page-title">Access receipts.</h1>
           <p className="page-copy">
-            The gateway unlocks resources by checking Solana receipt PDAs.
+            Receipts are fetched from Solana PDA accounts for the connected wallet.
           </p>
         </div>
+        <Button variant="secondary" onClick={loadReceipts} disabled={loading}>
+          {loading ? "Refreshing..." : "Refresh"}
+        </Button>
       </header>
+
+      {!buyer && (
+        <Panel className="empty-state">
+          <div className="panel-title">Connect a wallet</div>
+          <p className="panel-copy">Your verified Stripe3 receipts will appear here after payment.</p>
+        </Panel>
+      )}
+
+      {error && <div className="modal-error">{error}</div>}
+
+      {buyer && !loading && receipts.length === 0 && (
+        <Panel className="empty-state">
+          <div className="panel-title">No receipts yet</div>
+          <p className="panel-copy">Purchase a resource to create an on-chain receipt PDA.</p>
+        </Panel>
+      )}
 
       <section className="grid gap-6">
         {receipts.map((receipt) => (
-          <Panel key={receipt.id}>
+          <Panel key={receipt.pda}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <Badge tone="green">{receipt.status}</Badge>
+                <Badge tone="green">Verified</Badge>
                 <h3 className="mt-4 text-2xl font-black tracking-[-0.05em] text-text-primary">{receipt.resource}</h3>
               </div>
-              <div className="text-right text-xl font-black text-text-primary">{receipt.amount}</div>
+              <div className="text-right text-xl font-black text-text-primary">{formatLamports(receipt.amountLamports)}</div>
             </div>
             <div className="data-list mt-5">
-              <DataLine label="Buyer" value={receipt.buyer} />
+              <DataLine label="Buyer" value={formatAddress(receipt.buyer)} />
               <DataLine label="Receipt PDA" value={receipt.pda} />
-              <DataLine label="Time" value={receipt.timestamp} />
+              <DataLine label="Source" value={receipt.source || "solana"} />
             </div>
           </Panel>
         ))}

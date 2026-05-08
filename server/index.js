@@ -10,18 +10,29 @@ const PORT = process.env.PORT || 4100;
 const RPC_URL = process.env.SOLANA_RPC_URL || process.env.ANCHOR_PROVIDER_URL || "https://api.devnet.solana.com";
 const PROGRAM_ID = new PublicKey(idl.address);
 const connection = new Connection(RPC_URL, "confirmed");
-
-const receipts = new Map();
+const PAYMENT_REQUIRED_HEADER = "PAYMENT-REQUIRED";
+const PAYMENT_SIGNATURE_HEADER = "PAYMENT-SIGNATURE";
+const PAYMENT_RESPONSE_HEADER = "PAYMENT-RESPONSE";
 
 function sendJson(res, statusCode, payload, headers = {}) {
   res.writeHead(statusCode, {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type, X-Payment-Proof, X-Stripe3-Buyer",
+    "Access-Control-Allow-Headers": `Content-Type, X-Stripe3-Buyer, ${PAYMENT_SIGNATURE_HEADER}`,
+    "Access-Control-Expose-Headers": `${PAYMENT_REQUIRED_HEADER}, ${PAYMENT_RESPONSE_HEADER}`,
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
     ...headers,
   });
   res.end(JSON.stringify(payload, null, 2));
+}
+
+function encodePaymentHeader(payload) {
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64");
+}
+
+function decodePaymentHeader(value) {
+  if (!value) return null;
+  return JSON.parse(Buffer.from(value, "base64").toString("utf8"));
 }
 
 function readBody(req) {
@@ -50,10 +61,6 @@ function getResource(resourceId) {
   return resources.find((resource) => resource.id === resourceId);
 }
 
-function getReceiptKey(resourceId, buyer) {
-  return `${resourceId}:${buyer || "anonymous"}`;
-}
-
 function getProductPda(resource) {
   const merchant = new PublicKey(resource.merchant);
   return PublicKey.findProgramAddressSync(
@@ -78,6 +85,7 @@ async function findOnchainReceipt(resource, buyer) {
     const account = await connection.getAccountInfo(receiptPda, "confirmed");
 
     if (!account) return null;
+    if (!account.owner.equals(PROGRAM_ID)) return null;
 
     return {
       resourceId: resource.id,
@@ -91,11 +99,77 @@ async function findOnchainReceipt(resource, buyer) {
   }
 }
 
+async function findAllOnchainReceipts(buyer) {
+  if (!buyer) return [];
+
+  const receipts = await Promise.all(
+    resources.map(async (resource) => {
+      const receipt = await findOnchainReceipt(resource, buyer);
+      if (!receipt) return null;
+
+      return {
+        ...receipt,
+        resource: resource.title,
+        amountLamports: resource.priceLamports,
+      };
+    }),
+  );
+
+  return receipts.filter(Boolean);
+}
+
+async function verifyPaymentSignature(resource, encodedPayload, buyer) {
+  if (!encodedPayload) {
+    return { ok: false, error: "Missing PAYMENT-SIGNATURE header." };
+  }
+
+  let payload;
+
+  try {
+    payload = decodePaymentHeader(encodedPayload);
+  } catch {
+    return { ok: false, error: "PAYMENT-SIGNATURE is not valid base64 JSON." };
+  }
+
+  if (payload?.protocol !== "x402" || payload?.scheme !== "solana-transfer") {
+    return { ok: false, error: "Unsupported payment payload." };
+  }
+
+  if (payload.resourceId !== resource.id) {
+    return { ok: false, error: "Payment payload does not match this resource." };
+  }
+
+  if (buyer && payload.buyer !== buyer) {
+    return { ok: false, error: "Payment buyer does not match request buyer." };
+  }
+
+  const receipt = await findOnchainReceipt(resource, payload.buyer);
+
+  if (!receipt) {
+    return { ok: false, error: "On-chain receipt PDA was not found yet." };
+  }
+
+  return {
+    ok: true,
+    payload,
+    receipt,
+    settlement: {
+      success: true,
+      network: "solana-devnet",
+      resourceId: resource.id,
+      buyer: payload.buyer,
+      receipt: receipt.pda,
+      transactionSignature: payload.transactionSignature || null,
+    },
+  };
+}
+
 function buildPaymentRequired(resource, buyer) {
   const invoiceId = `inv_${resource.id}_${Date.now()}`;
   const productPda = getProductPda(resource);
 
   return {
+    x402Version: 2,
     error: "payment_required",
     status: 402,
     protocol: "x402",
@@ -112,9 +186,13 @@ function buildPaymentRequired(resource, buyer) {
         programId: PROGRAM_ID.toBase58(),
         product: productPda.toBase58(),
         merchant: resource.merchant,
-        payTo: "stripe3_invoice_pda",
+        payTo: resource.merchant,
+        settlementProgram: PROGRAM_ID.toBase58(),
       },
     ],
+    extensions: {
+      paymentIdentifier: true,
+    },
   };
 }
 
@@ -152,34 +230,9 @@ async function handleRequest(req, res) {
     return;
   }
 
-  if (url.pathname === "/api/receipts" && req.method === "POST") {
-    const body = await readBody(req);
-    const resource = getResource(body.resourceId);
-
-    if (!resource || !body.buyer) {
-      sendJson(res, 400, { ok: false, error: "resourceId and buyer are required" });
-      return;
-    }
-
-    const receipt = {
-      id: `receipt_${Date.now()}`,
-      resourceId: resource.id,
-      buyer: body.buyer,
-      amountLamports: resource.priceLamports,
-      signature: body.signature || "devnet_signature_pending",
-      pda: `stripe3_receipt_${resource.id}_${body.buyer.slice(0, 6)}`,
-      verified: true,
-      createdAt: new Date().toISOString(),
-    };
-
-    receipts.set(getReceiptKey(resource.id, body.buyer), receipt);
-    sendJson(res, 200, { ok: true, receipt });
-    return;
-  }
-
   if (url.pathname === "/api/receipts" && req.method === "GET") {
     const buyer = url.searchParams.get("buyer");
-    const data = Array.from(receipts.values()).filter((receipt) => !buyer || receipt.buyer === buyer);
+    const data = await findAllOnchainReceipts(buyer);
     sendJson(res, 200, { ok: true, receipts: data });
     return;
   }
@@ -194,12 +247,40 @@ async function handleRequest(req, res) {
       return;
     }
 
-    const receipt = receipts.get(getReceiptKey(resource.id, buyer)) || await findOnchainReceipt(resource, buyer);
+    const paymentSignature = req.headers[PAYMENT_SIGNATURE_HEADER.toLowerCase()];
+    const receipt = await findOnchainReceipt(resource, buyer);
 
     if (!receipt) {
-      sendJson(res, 402, buildPaymentRequired(resource, buyer), {
-        "X-Payment-Protocol": "x402",
-        "X-Payment-Network": "solana-devnet",
+      const paymentRequired = buildPaymentRequired(resource, buyer);
+
+      sendJson(res, 402, paymentRequired, {
+        [PAYMENT_REQUIRED_HEADER]: encodePaymentHeader(paymentRequired),
+      });
+      return;
+    }
+
+    if (paymentSignature) {
+      const verification = await verifyPaymentSignature(resource, paymentSignature, buyer);
+
+      if (!verification.ok) {
+        const settlement = { success: false, error: verification.error };
+        sendJson(res, 402, { ok: false, error: verification.error }, {
+          [PAYMENT_RESPONSE_HEADER]: encodePaymentHeader(settlement),
+        });
+        return;
+      }
+
+      sendJson(res, 200, {
+        ok: true,
+        resource: resource.title,
+        unlocked: true,
+        receipt: verification.receipt,
+        payload: {
+          signal: "Unlocked premium payload from stripe3.",
+          note: "Served after x402 payment and receipt verification.",
+        },
+      }, {
+        [PAYMENT_RESPONSE_HEADER]: encodePaymentHeader(verification.settlement),
       });
       return;
     }
@@ -213,6 +294,14 @@ async function handleRequest(req, res) {
         signal: "Unlocked premium payload from stripe3.",
         note: "Served after receipt verification.",
       },
+    }, {
+      [PAYMENT_RESPONSE_HEADER]: encodePaymentHeader({
+        success: true,
+        network: "solana-devnet",
+        resourceId: resource.id,
+        buyer,
+        receipt: receipt.pda,
+      }),
     });
     return;
   }

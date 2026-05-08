@@ -6,15 +6,15 @@ The product idea is simple: a protected resource can respond with `402 Payment R
 
 ## Current Build Stage
 
-This repo contains the frontend, local gateway, and Solana program foundation:
+This repo contains the frontend, x402 gateway, LI.FI funding surface, and Solana program:
 
 - Vite + React + Tailwind CSS v3
 - fhex402-inspired black-grid interface
 - Split component/page architecture
-- Local checkout flow for `402 Payment Required`
+- x402 V2-style `PAYMENT-REQUIRED`, `PAYMENT-SIGNATURE`, and `PAYMENT-RESPONSE` headers
 - Anchor/Rust Solana program for product and receipt PDAs
 - Wallet Standard support for Phantom, Solflare, and compatible Solana wallets
-- LI.FI funding panel
+- Embedded LI.FI Widget funding flow for production onboarding
 - Agent payment console
 
 ## Target Architecture
@@ -82,17 +82,15 @@ The local gateway runs on `http://localhost:4100` and exposes:
 GET  /api/resources
 POST /api/invoices
 GET  /api/protected/:resourceId
-POST /api/receipts
 GET  /api/receipts
 ```
 
 ## Next Milestones
 
-1. Deploy the Anchor program to devnet.
-2. Initialize product PDAs with `npm run init:products`.
-3. Verify receipt PDAs from the backend.
-4. Add LI.FI Widget for production funding.
-5. Deploy frontend, backend, and Solana program.
+1. Deploy frontend and gateway services.
+2. Add production environment variables for `VITE_GATEWAY_URL`, `VITE_SOLANA_RPC_URL`, and `SOLANA_RPC_URL`.
+3. Record a sub-3-minute demo video showing wallet payment, x402 unlock, receipt lookup, and LI.FI funding.
+4. Optional: add code splitting for the LI.FI widget bundle before final production launch.
 
 ## Deployment Addresses
 
