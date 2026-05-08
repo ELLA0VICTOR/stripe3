@@ -1,13 +1,17 @@
 import { Panel } from "../ui";
 
-const logs = [
-  ["00:01", "REQUEST", "GET /api/protected/premium-signal"],
-  ["00:02", "402", "Payment required. Network: solana-devnet. Amount: 0.003 SOL."],
-  ["00:04", "PAY", "Preparing Stripe3 invoice payment with buyer wallet."],
-  ["00:07", "VERIFY", "Receipt PDA found. Retrying protected resource."],
-];
+export function AgentLog({ resource, paymentResult }) {
+  const logs = [
+    ["00:01", "REQUEST", `GET ${resource.endpoint}`],
+    ["00:02", "402", "Payment required. Invoice terms returned."],
+    [
+      "00:04",
+      "PAY",
+      paymentResult?.alreadyVerified ? "Existing receipt found for buyer wallet." : "Payment submitted from buyer wallet.",
+    ],
+    ["00:07", "VERIFY", "Receipt PDA found. Access unlocked."],
+  ];
 
-export function AgentLog() {
   return (
     <Panel>
       <div className="panel-title">Agent trace</div>

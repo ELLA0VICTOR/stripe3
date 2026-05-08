@@ -10,7 +10,44 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.vite
+coverage
 *.local
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.secret
+*.seed
+*.mnemonic
+id.json
+*-id.json
+*wallet*.json
+*keypair*.json
+
+# Solana / Anchor build artifacts
+target
+.anchor
+test-ledger
+programs/**/target
+target/deploy
+*.so
+*.dylib
+*.dll
+
+# Local storage / databases
+*.db
+*.sqlite
+*.sqlite3
+*.bak
+*.backup
+*.tmp
+tmp
+temp
 
 # Editor directories and files
 .vscode/*

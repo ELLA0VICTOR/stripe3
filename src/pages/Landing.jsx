@@ -18,9 +18,9 @@ export function Landing({ setActivePage, mode }) {
             Solana stores access receipts. LI.FI helps users fund the wallet they pay from.
           </p>
           <div className="hero-actions">
-            <Button onClick={() => setActivePage("checkout")}>Open checkout</Button>
-            <Button variant="secondary" onClick={() => setActivePage("developers")}>
-              View integration
+            <Button onClick={() => setActivePage("resources")}>Browse resources</Button>
+            <Button variant="secondary" onClick={() => setActivePage("receipts")}>
+              View receipts
             </Button>
           </div>
         </div>

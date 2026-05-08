@@ -1,7 +1,7 @@
 import { formatAddress, formatLamports } from "../../lib/utils";
 import { Badge, Button, DataLine, Panel } from "../ui";
 
-export function ResourceCard({ resource, onOpenCheckout }) {
+export function ResourceCard({ resource, onPurchaseResource }) {
   return (
     <Panel className="resource-card grid gap-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -25,7 +25,7 @@ export function ResourceCard({ resource, onOpenCheckout }) {
       </div>
 
       <div className="resource-actions">
-        <Button onClick={() => onOpenCheckout(resource.id)}>Open checkout</Button>
+        <Button onClick={() => onPurchaseResource(resource.id)}>Purchase access</Button>
         <Button variant="secondary">Copy x402 URL</Button>
       </div>
     </Panel>

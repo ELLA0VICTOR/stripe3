@@ -1,6 +1,6 @@
 import { TopBar } from "./TopBar";
 
-export function Layout({ children, activePage, setActivePage, connected, onConnect, mode, onModeChange }) {
+export function Layout({ children, activePage, setActivePage, mode, onModeChange }) {
   const inWorkspace = activePage !== "landing";
 
   return (
@@ -8,8 +8,6 @@ export function Layout({ children, activePage, setActivePage, connected, onConne
       <TopBar
         activePage={activePage}
         setActivePage={setActivePage}
-        connected={connected}
-        onConnect={onConnect}
         mode={mode}
         onModeChange={onModeChange}
       />

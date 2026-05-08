@@ -1,29 +1,15 @@
 /* global process */
 
 import http from "node:http";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { Buffer } from "node:buffer";
+import { resources } from "../src/lib/data.js";
+import idl from "../src/idl/stripe3.json" with { type: "json" };
 
 const PORT = process.env.PORT || 4100;
-
-const resources = [
-  {
-    id: "premium-signal",
-    title: "Premium Solana Signal API",
-    priceLamports: 3_000_000,
-    endpoint: "/api/protected/premium-signal",
-  },
-  {
-    id: "agent-toolkit",
-    title: "Agent Route Optimizer",
-    priceLamports: 5_000_000,
-    endpoint: "/api/protected/agent-toolkit",
-  },
-  {
-    id: "dataset-drop",
-    title: "Liquidity Dataset Drop",
-    priceLamports: 8_000_000,
-    endpoint: "/api/protected/dataset-drop",
-  },
-];
+const RPC_URL = process.env.SOLANA_RPC_URL || process.env.ANCHOR_PROVIDER_URL || "https://api.devnet.solana.com";
+const PROGRAM_ID = new PublicKey(idl.address);
+const connection = new Connection(RPC_URL, "confirmed");
 
 const receipts = new Map();
 
@@ -68,8 +54,46 @@ function getReceiptKey(resourceId, buyer) {
   return `${resourceId}:${buyer || "anonymous"}`;
 }
 
+function getProductPda(resource) {
+  const merchant = new PublicKey(resource.merchant);
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("product"), merchant.toBuffer(), Buffer.from(resource.id)],
+    PROGRAM_ID,
+  )[0];
+}
+
+function getReceiptPda(resource, buyer) {
+  const product = getProductPda(resource);
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("receipt"), product.toBuffer(), new PublicKey(buyer).toBuffer()],
+    PROGRAM_ID,
+  )[0];
+}
+
+async function findOnchainReceipt(resource, buyer) {
+  if (!buyer) return null;
+
+  try {
+    const receiptPda = getReceiptPda(resource, buyer);
+    const account = await connection.getAccountInfo(receiptPda, "confirmed");
+
+    if (!account) return null;
+
+    return {
+      resourceId: resource.id,
+      buyer,
+      pda: receiptPda.toBase58(),
+      verified: true,
+      source: "solana",
+    };
+  } catch {
+    return null;
+  }
+}
+
 function buildPaymentRequired(resource, buyer) {
   const invoiceId = `inv_${resource.id}_${Date.now()}`;
+  const productPda = getProductPda(resource);
 
   return {
     error: "payment_required",
@@ -85,6 +109,9 @@ function buildPaymentRequired(resource, buyer) {
         invoiceId,
         resourceId: resource.id,
         buyer: buyer || null,
+        programId: PROGRAM_ID.toBase58(),
+        product: productPda.toBase58(),
+        merchant: resource.merchant,
         payTo: "stripe3_invoice_pda",
       },
     ],
@@ -167,7 +194,7 @@ async function handleRequest(req, res) {
       return;
     }
 
-    const receipt = receipts.get(getReceiptKey(resource.id, buyer));
+    const receipt = receipts.get(getReceiptKey(resource.id, buyer)) || await findOnchainReceipt(resource, buyer);
 
     if (!receipt) {
       sendJson(res, 402, buildPaymentRequired(resource, buyer), {

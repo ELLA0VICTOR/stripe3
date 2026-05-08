@@ -1,0 +1,514 @@
+{
+  "address": "9FMFBdiH5dY91hUZ9sz4qqLRKTZhR7v29YPAnnU3VvcW",
+  "metadata": {
+    "name": "stripe3",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Solana receipt program for x402-protected resources"
+  },
+  "instructions": [
+    {
+      "name": "create_product",
+      "discriminator": [
+        183,
+        155,
+        202,
+        119,
+        43,
+        114,
+        174,
+        225
+      ],
+      "accounts": [
+        {
+          "name": "merchant",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "product",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  100,
+                  117,
+                  99,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              },
+              {
+                "kind": "arg",
+                "path": "product_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "product_id",
+          "type": "string"
+        },
+        {
+          "name": "price_lamports",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "pay_for_resource",
+      "discriminator": [
+        235,
+        129,
+        60,
+        133,
+        155,
+        109,
+        126,
+        68
+      ],
+      "accounts": [
+        {
+          "name": "buyer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "product",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  100,
+                  117,
+                  99,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "product.merchant",
+                "account": "Product"
+              },
+              {
+                "kind": "arg",
+                "path": "product_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "merchant",
+          "writable": true
+        },
+        {
+          "name": "receipt",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  99,
+                  101,
+                  105,
+                  112,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "product"
+              },
+              {
+                "kind": "account",
+                "path": "buyer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_product_id",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "set_product_active",
+      "discriminator": [
+        135,
+        56,
+        185,
+        52,
+        157,
+        34,
+        12,
+        177
+      ],
+      "accounts": [
+        {
+          "name": "merchant",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "product"
+          ]
+        },
+        {
+          "name": "product",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  100,
+                  117,
+                  99,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              },
+              {
+                "kind": "arg",
+                "path": "product_id"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "_product_id",
+          "type": "string"
+        },
+        {
+          "name": "active",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "update_product_price",
+      "discriminator": [
+        224,
+        194,
+        162,
+        206,
+        125,
+        101,
+        44,
+        234
+      ],
+      "accounts": [
+        {
+          "name": "merchant",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "product"
+          ]
+        },
+        {
+          "name": "product",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  100,
+                  117,
+                  99,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "merchant"
+              },
+              {
+                "kind": "arg",
+                "path": "product_id"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "_product_id",
+          "type": "string"
+        },
+        {
+          "name": "price_lamports",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Product",
+      "discriminator": [
+        102,
+        76,
+        55,
+        251,
+        38,
+        73,
+        224,
+        229
+      ]
+    },
+    {
+      "name": "Receipt",
+      "discriminator": [
+        39,
+        154,
+        73,
+        106,
+        80,
+        102,
+        145,
+        153
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "ProductCreated",
+      "discriminator": [
+        41,
+        64,
+        29,
+        113,
+        18,
+        124,
+        58,
+        82
+      ]
+    },
+    {
+      "name": "ProductUpdated",
+      "discriminator": [
+        140,
+        150,
+        65,
+        136,
+        109,
+        243,
+        12,
+        25
+      ]
+    },
+    {
+      "name": "ReceiptCreated",
+      "discriminator": [
+        53,
+        236,
+        206,
+        24,
+        194,
+        10,
+        208,
+        163
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidProductId",
+      "msg": "Product id must be 1-32 bytes."
+    },
+    {
+      "code": 6001,
+      "name": "InvalidPrice",
+      "msg": "Price must be greater than zero."
+    },
+    {
+      "code": 6002,
+      "name": "ProductInactive",
+      "msg": "Product is not active."
+    },
+    {
+      "code": 6003,
+      "name": "InvalidMerchant",
+      "msg": "Merchant account does not match the product."
+    }
+  ],
+  "types": [
+    {
+      "name": "Product",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "merchant",
+            "type": "pubkey"
+          },
+          {
+            "name": "product_id",
+            "type": "string"
+          },
+          {
+            "name": "price_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProductCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "merchant",
+            "type": "pubkey"
+          },
+          {
+            "name": "product",
+            "type": "pubkey"
+          },
+          {
+            "name": "product_id",
+            "type": "string"
+          },
+          {
+            "name": "price_lamports",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProductUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "merchant",
+            "type": "pubkey"
+          },
+          {
+            "name": "product",
+            "type": "pubkey"
+          },
+          {
+            "name": "price_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Receipt",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "product",
+            "type": "pubkey"
+          },
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "merchant",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReceiptCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "product",
+            "type": "pubkey"
+          },
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "merchant",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "receipt",
+            "type": "pubkey"
+          }
+        ]
+      }
+    }
+  ]
+}

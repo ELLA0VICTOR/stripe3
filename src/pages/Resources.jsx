@@ -2,7 +2,7 @@ import { ResourceCard } from "../components/resources/ResourceCard";
 import { ResourceForm } from "../components/resources/ResourceForm";
 import { resources } from "../lib/data";
 
-export function Resources({ onOpenCheckout }) {
+export function Resources({ onPurchaseResource }) {
   return (
     <div className="page-stack">
       <header className="page-header">
@@ -20,7 +20,7 @@ export function Resources({ onOpenCheckout }) {
 
       <section className="resource-grid">
         {resources.map((resource) => (
-          <ResourceCard key={resource.id} resource={resource} onOpenCheckout={onOpenCheckout} />
+          <ResourceCard key={resource.id} resource={resource} onPurchaseResource={onPurchaseResource} />
         ))}
       </section>
 

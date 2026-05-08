@@ -1,11 +1,9 @@
-export const connectedWallet = "8Rail3aX402SolanaDevnetWallet111111111111111";
+export const defaultMerchant = "7TFtVd1e5DSaonVSGP73GPKe78w2EmkL5LrkjGGL6PDH";
 
 export const navItems = [
   { id: "resources", label: "Resources", glyph: "01" },
-  { id: "checkout", label: "Checkout", glyph: "02" },
-  { id: "agent", label: "Agent", glyph: "03" },
-  { id: "receipts", label: "Receipts", glyph: "04" },
-  { id: "developers", label: "Developers", glyph: "05" },
+  { id: "agent", label: "Activity", glyph: "02" },
+  { id: "receipts", label: "Receipts", glyph: "03" },
 ];
 
 export const networkModes = {
@@ -31,7 +29,7 @@ export const resources = [
     title: "Premium Solana Signal API",
     type: "API",
     priceLamports: 3_000_000,
-    merchant: "7Payx4029xYt4JgWzM2vD6jQnP8hR9sLk2",
+    merchant: defaultMerchant,
     status: "Live",
     endpoint: "/api/protected/premium-signal",
     description: "A paid market-signal endpoint unlocked through x402 and verified by Solana receipts.",
@@ -41,7 +39,7 @@ export const resources = [
     title: "Agent Route Optimizer",
     type: "AI tool",
     priceLamports: 5_000_000,
-    merchant: "6Toolx4029vR3qQLmP4fXg2wZk18nPp2",
+    merchant: defaultMerchant,
     status: "Draft",
     endpoint: "/api/protected/agent-toolkit",
     description: "A premium AI tool that prepares route intelligence after payment verification.",
@@ -51,7 +49,7 @@ export const resources = [
     title: "Liquidity Dataset Drop",
     type: "Dataset",
     priceLamports: 8_000_000,
-    merchant: "4Datax4028uYp3aVN8mH2qP7sQf9cRr1",
+    merchant: defaultMerchant,
     status: "Live",
     endpoint: "/api/protected/dataset-drop",
     description: "A downloadable dataset with access gated by a paid Solana receipt.",
@@ -123,12 +121,3 @@ export const agentSteps = [
     status: "queued",
   },
 ];
-
-export const integrationSnippet = `import { stripe3 } from "@stripe3/gateway";
-
-app.get("/premium-api", stripe3.protect({
-  productId: "premium-signal",
-  network: "solana-devnet",
-}), async (req, res) => {
-  res.json({ signal: "Unlocked after Solana receipt verification" });
-});`;

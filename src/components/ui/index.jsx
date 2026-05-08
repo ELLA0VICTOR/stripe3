@@ -12,8 +12,12 @@ export function Badge({ children, tone = "", className = "" }) {
   return <span className={cn("badge", tone, className)}>{children}</span>;
 }
 
-export function Panel({ children, className = "", padded = true }) {
-  return <section className={cn("panel", padded && "pad", className)}>{children}</section>;
+export function Panel({ children, className = "", padded = true, ...props }) {
+  return (
+    <section className={cn("panel", padded && "pad", className)} {...props}>
+      {children}
+    </section>
+  );
 }
 
 export function MetricCard({ value, label, sub }) {

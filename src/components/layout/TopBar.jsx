@@ -1,9 +1,9 @@
-import { connectedWallet, navItems } from "../../lib/data";
-import { formatAddress } from "../../lib/utils";
+import { navItems } from "../../lib/data";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Button } from "../ui";
 import { LogoMark } from "../ui/Logo";
 
-export function TopBar({ activePage, setActivePage, connected, onConnect, mode, onModeChange }) {
+export function TopBar({ activePage, setActivePage, mode, onModeChange }) {
   const inWorkspace = activePage !== "landing";
 
   return (
@@ -43,11 +43,7 @@ export function TopBar({ activePage, setActivePage, connected, onConnect, mode, 
             Switch mode
           </Button>
         )}
-        {connected ? (
-          <Button variant="secondary">{formatAddress(connectedWallet)}</Button>
-        ) : (
-          <Button onClick={onConnect}>Connect</Button>
-        )}
+        <WalletMultiButton className="wallet-connect-button" />
       </div>
     </header>
   );

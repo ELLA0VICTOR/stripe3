@@ -536,6 +536,117 @@ a {
   align-items: end;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(51, 153, 255, 0.12), transparent 24rem),
+    rgba(0, 0, 0, 0.76);
+  backdrop-filter: blur(12px);
+}
+
+.payment-modal {
+  width: min(100%, 620px);
+  box-shadow: var(--shadow-soft);
+}
+
+.modal-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+}
+
+.modal-head h2 {
+  margin: 14px 0 0;
+  color: var(--text-primary);
+  font-size: clamp(24px, 3.2vw, 34px);
+  line-height: 1.05;
+  letter-spacing: -0.055em;
+  font-weight: 900;
+}
+
+.modal-head p {
+  margin: 10px 0 0;
+  max-width: 460px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+  font-weight: 700;
+}
+
+.modal-close {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text-secondary);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.funding-note {
+  margin-top: 16px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--line);
+  padding: 0 14px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.modal-error {
+  margin-top: 14px;
+  border: 1px solid rgba(255, 104, 104, 0.28);
+  background: rgba(255, 104, 104, 0.07);
+  padding: 12px 14px;
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.funding-note button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.wallet-connect-button.wallet-adapter-button-trigger {
+  min-height: 42px;
+  border-radius: 0;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.wallet-connect-button.wallet-adapter-button-trigger:hover {
+  background: var(--accent-dim);
+}
+
+.modal-actions {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.empty-state {
+  max-width: 640px;
+}
+
 .three-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -864,6 +975,15 @@ a {
 
   .resource-actions {
     grid-template-columns: 1fr;
+  }
+
+  .modal-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .funding-note {
+    display: grid;
+    padding: 12px 14px;
   }
 
   .metric-card,
