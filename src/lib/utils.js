@@ -12,7 +12,7 @@ export function formatLamports(lamports) {
 }
 
 export function getResourceById(resources, id) {
-  return resources.find((resource) => resource.id === id) || resources[0];
+  return resources.find((resource) => resource.id === id) || resources[0] || null;
 }
 
 export function slugifyResourceId(title) {

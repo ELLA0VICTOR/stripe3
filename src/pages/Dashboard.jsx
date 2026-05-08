@@ -18,7 +18,7 @@ export function Dashboard({ mode, resources = [] }) {
           </p>
         </div>
         <Panel className="min-w-[320px]">
-          <Badge tone={mode === "sandbox" ? "blue" : "green"}>{activeMode.label}</Badge>
+          <Badge tone={mode === "devnet" ? "blue" : "green"}>{activeMode.label}</Badge>
           <div className="data-list mt-7">
             <DataLine label="Network" value={activeMode.network} />
             <DataLine label="Asset" value={activeMode.asset} />
@@ -54,7 +54,7 @@ export function Dashboard({ mode, resources = [] }) {
         <Panel>
           <div className="panel-title">System path</div>
           <p className="panel-copy">
-            Sandbox handles devnet receipts. Production enables LI.FI funding.
+            Devnet handles test receipts. Production enables LI.FI funding.
           </p>
           <div className="data-list mt-5">
             <DataLine label="Payment" value="x402" />

@@ -1,8 +1,23 @@
+import { useEffect, useState } from "react";
 import { AgentConsole } from "../components/agent/AgentConsole";
 import { AgentLog } from "../components/agent/AgentLog";
-import { Button, Panel, DataLine } from "../components/ui";
+import { EmptyNotice } from "../components/ui/EmptyNotice";
 
-export function AgentMode({ resource, mode, paymentStarted, paymentResult, setActivePage }) {
+export function AgentMode({ resource, mode, paymentStarted, paymentResult }) {
+  const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => {
+    if (!paymentStarted) return undefined;
+
+    const timers = [0, 700, 1600, 2700, 3900, 5200].map((delay, index) => (
+      window.setTimeout(() => setActiveStep(index), delay)
+    ));
+
+    return () => {
+      timers.forEach(window.clearTimeout);
+    };
+  }, [paymentStarted, paymentResult?.receipt, paymentResult?.signature]);
+
   if (!paymentStarted) {
     return (
       <div className="page-stack">
@@ -19,13 +34,10 @@ export function AgentMode({ resource, mode, paymentStarted, paymentResult, setAc
           </div>
         </header>
 
-        <Panel className="empty-state">
-          <div className="panel-title">Start from Resources</div>
-          <p className="panel-copy">Purchase access to an API, AI tool, or dataset to see the payment flow here.</p>
-          <Button className="mt-5" onClick={() => setActivePage("resources")}>
-            Browse resources
-          </Button>
-        </Panel>
+        <EmptyNotice
+          title="No active payments"
+          copy="Purchase a resource to start an x402 payment session."
+        />
       </div>
     );
   }
@@ -36,30 +48,23 @@ export function AgentMode({ resource, mode, paymentStarted, paymentResult, setAc
         <div>
           <div className="page-kicker">
             <span className="dot" />
-            Autonomous payments
+            x402 verification
           </div>
           <h1 className="page-title">Payment activity.</h1>
           <p className="page-copy">
-            The x402 flow starts after payment confirmation and shows each step as the resource unlocks.
+            Live receipt verification and access unlock for the current resource.
           </p>
         </div>
       </header>
 
-      <section className="section-grid">
-        <AgentConsole resource={resource} mode={mode} paymentResult={paymentResult} />
-        <div className="grid gap-6">
-          <AgentLog resource={resource} paymentResult={paymentResult} />
-          <Panel>
-            <div className="panel-title">Payment policy</div>
-            <p className="panel-copy">Limits keep automated payments controlled.</p>
-            <div className="data-list mt-5">
-              <DataLine label="Spend cap" value="0.02 SOL" />
-              <DataLine label="Network" value={mode === "production" ? "Solana mainnet" : "Solana devnet"} />
-              <DataLine label="Endpoint" value={resource.endpoint} />
-              <DataLine label="Receipt" value={paymentResult?.receipt || "Pending"} />
-            </div>
-          </Panel>
-        </div>
+      <section className="activity-grid">
+        <AgentConsole
+          resource={resource}
+          mode={mode}
+          paymentResult={paymentResult}
+          activeStep={activeStep}
+        />
+        <AgentLog resource={resource} paymentResult={paymentResult} activeStep={activeStep} />
       </section>
     </div>
   );

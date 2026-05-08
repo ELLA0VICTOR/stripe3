@@ -33,9 +33,9 @@ export function TopBar({ activePage, setActivePage, mode, onModeChange }) {
 
       <div className="topbar-actions">
         {inWorkspace && (
-          <span className={`mode-badge ${mode === "sandbox" ? "sandbox" : "production"}`}>
+          <span className={`mode-badge ${mode === "devnet" ? "devnet" : "production"}`}>
             <LogoMark className="mode-badge-mark" />
-            {mode === "sandbox" ? "Sandbox" : "Production"}
+            {mode === "devnet" ? "Devnet" : "Production"}
           </span>
         )}
         {inWorkspace && (

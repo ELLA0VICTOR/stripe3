@@ -2,7 +2,7 @@ import { landingFeatures, networkModes, stats } from "../lib/data";
 import { Badge, Button, MetricCard, Panel } from "../components/ui";
 
 export function Landing({ setActivePage, mode }) {
-  const activeMode = networkModes[mode];
+  const activeMode = networkModes[mode] || networkModes.devnet;
 
   return (
     <div className="landing-page">

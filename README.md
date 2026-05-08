@@ -45,7 +45,7 @@ scripts/
 ## Hackathon Modes
 
 ```text
-Sandbox Mode
+Devnet Mode
 Network: Solana devnet
 Payment: devnet SOL
 Purpose: safe testing
@@ -76,7 +76,6 @@ anchor deploy --provider.cluster devnet
 
 export ANCHOR_PROVIDER_URL="https://api.devnet.solana.com"
 export ANCHOR_WALLET="$HOME/.config/solana/id.json"
-npm run init:products
 ```
 
 The program stores:
@@ -131,7 +130,5 @@ Explorer: https://explorer.solana.com/address/9FMFBdiH5dY91hUZ9sz4qqLRKTZhR7v29Y
 Initialized devnet product PDAs:
 
 ```text
-premium-signal: 7s547sgqaNhN4z737DfspcaapRtxCKiYHYc5DF3bkTyi
-agent-toolkit: GNGxK9Aomgb9Hm2MCBpfYsxt8SQfyXgckAaQgNq3o1Dg
-dataset-drop: 3XX2PAXVRFkSHSB6LbdDk9KTMeN4NsqNMrsLr7TRSQh5
+Products are created by sellers from the Resources page.
 ```

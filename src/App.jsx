@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Layout } from "./components/layout/Layout";
+import { CookieConsent } from "./components/layout/CookieConsent";
 import { PaymentModal } from "./components/checkout/PaymentModal";
+import { UnlockedContentModal } from "./components/checkout/UnlockedContentModal";
 import { resources as seededResources } from "./lib/data";
 import { fetchResources } from "./lib/gatewayClient";
 import { getResourceById } from "./lib/utils";
@@ -18,14 +20,16 @@ const pageMap = {
 
 function App() {
   const [activePage, setActivePage] = useState("landing");
-  const [mode, setMode] = useState("sandbox");
+  const [mode, setMode] = useState("devnet");
   const [resourceList, setResourceList] = useState(seededResources);
   const [resourcesLoading, setResourcesLoading] = useState(false);
   const [resourcesError, setResourcesError] = useState("");
-  const [selectedResourceId, setSelectedResourceId] = useState(seededResources[0].id);
+  const [selectedResourceId, setSelectedResourceId] = useState(seededResources[0]?.id || "");
   const [paymentResourceId, setPaymentResourceId] = useState(null);
   const [paymentStarted, setPaymentStarted] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
+  const [showUnlockedContent, setShowUnlockedContent] = useState(false);
+  const unlockTimerRef = useRef(null);
 
   const selectedResource = useMemo(
     () => getResourceById(resourceList, selectedResourceId),
@@ -65,20 +69,30 @@ function App() {
     };
   }, []);
 
+  useEffect(() => () => {
+    if (unlockTimerRef.current) window.clearTimeout(unlockTimerRef.current);
+  }, []);
+
   function openPayment(resourceId) {
     setSelectedResourceId(resourceId);
     setPaymentResourceId(resourceId);
   }
 
   function toggleMode() {
-    setMode((current) => (current === "sandbox" ? "production" : "sandbox"));
+    setMode((current) => (current === "devnet" ? "production" : "devnet"));
   }
 
   function confirmPayment(result) {
     setPaymentResourceId(null);
     setPaymentResult(result);
     setPaymentStarted(true);
+    setShowUnlockedContent(false);
     setActivePage("agent");
+
+    if (unlockTimerRef.current) window.clearTimeout(unlockTimerRef.current);
+    unlockTimerRef.current = window.setTimeout(() => {
+      setShowUnlockedContent(true);
+    }, 5600);
   }
 
   function handleResourceCreated(resource) {
@@ -112,14 +126,20 @@ function App() {
       <PaymentModal
         resource={paymentResourceId ? getResourceById(resourceList, paymentResourceId) : null}
         mode={mode}
-        onModeChange={toggleMode}
         onClose={() => setPaymentResourceId(null)}
         onConfirm={confirmPayment}
       />
+      {showUnlockedContent && (
+        <UnlockedContentModal
+          paymentResult={paymentResult}
+          onClose={() => setShowUnlockedContent(false)}
+        />
+      )}
       <footer className="site-footer">
         <span>stripe3 / x402 payment gateway for Solana resources</span>
         <span>Need Solana funds? Fund through LI.FI in production.</span>
       </footer>
+      <CookieConsent />
     </Layout>
   );
 }

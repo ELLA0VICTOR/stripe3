@@ -7,8 +7,8 @@ export const navItems = [
 ];
 
 export const networkModes = {
-  sandbox: {
-    label: "Sandbox",
+  devnet: {
+    label: "Devnet",
     network: "Solana devnet",
     asset: "SOL",
     lifi: "Mainnet only",
@@ -23,38 +23,7 @@ export const networkModes = {
   },
 };
 
-export const resources = [
-  {
-    id: "premium-signal",
-    title: "Premium Solana Signal API",
-    type: "API",
-    priceLamports: 3_000_000,
-    merchant: defaultMerchant,
-    status: "Live",
-    endpoint: "/api/protected/premium-signal",
-    description: "A paid market-signal endpoint unlocked through x402 and verified by Solana receipts.",
-  },
-  {
-    id: "agent-toolkit",
-    title: "Agent Route Optimizer",
-    type: "AI tool",
-    priceLamports: 5_000_000,
-    merchant: defaultMerchant,
-    status: "Draft",
-    endpoint: "/api/protected/agent-toolkit",
-    description: "A premium AI tool that prepares route intelligence after payment verification.",
-  },
-  {
-    id: "dataset-drop",
-    title: "Liquidity Dataset Drop",
-    type: "Dataset",
-    priceLamports: 8_000_000,
-    merchant: defaultMerchant,
-    status: "Live",
-    endpoint: "/api/protected/dataset-drop",
-    description: "A downloadable dataset with access gated by a paid Solana receipt.",
-  },
-];
+export const resources = [];
 
 export const stats = [
   { value: "402", label: "Native web signal", sub: "Payment required before access" },

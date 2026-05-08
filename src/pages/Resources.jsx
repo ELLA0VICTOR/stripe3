@@ -31,6 +31,14 @@ export function Resources({
 
       <section className="resource-grid">
         {resourcesLoading && <div className="panel-copy">Loading resources...</div>}
+        {!resourcesLoading && resources.length === 0 && (
+          <div className="empty-resource-state">
+            <div className="panel-title">No paid resources yet</div>
+            <p className="panel-copy">
+              Connect a seller wallet and create the first product below. Once the Solana Product PDA is confirmed, it will appear here for buyers.
+            </p>
+          </div>
+        )}
         {resources.map((resource) => (
           <ResourceCard key={resource.id} resource={resource} onPurchaseResource={onPurchaseResource} />
         ))}

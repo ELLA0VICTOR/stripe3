@@ -9,7 +9,7 @@ const LiFiWidget = lazy(() =>
   import("@lifi/widget").then((module) => ({ default: module.LiFiWidget })),
 );
 
-export function PaymentModal({ resource, mode, onClose, onConfirm, onModeChange }) {
+export function PaymentModal({ resource, mode, onClose, onConfirm }) {
   const { connection } = useConnection();
   const wallet = useAnchorWallet();
   const [error, setError] = useState("");
@@ -106,7 +106,10 @@ export function PaymentModal({ resource, mode, onClose, onConfirm, onModeChange 
           <button
             type="button"
             onClick={() => {
-              if (!production) onModeChange();
+              if (!production) {
+                setError("LI.FI funding is available in Production mode. Stay on Devnet for this test payment.");
+                return;
+              }
               setShowFunding((current) => !current);
             }}
           >

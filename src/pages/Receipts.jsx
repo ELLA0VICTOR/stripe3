@@ -3,6 +3,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { fetchReceiptsForBuyer } from "../lib/gatewayClient";
 import { formatAddress, formatLamports } from "../lib/utils";
 import { Badge, Button, DataLine, Panel } from "../components/ui";
+import { EmptyNotice } from "../components/ui/EmptyNotice";
 
 export function Receipts() {
   const { publicKey } = useWallet();
@@ -66,19 +67,19 @@ export function Receipts() {
       </header>
 
       {!buyer && (
-        <Panel className="empty-state">
-          <div className="panel-title">Connect a wallet</div>
-          <p className="panel-copy">Your verified Stripe3 receipts will appear here after payment.</p>
-        </Panel>
+        <EmptyNotice
+          title="No wallet connected"
+          copy="Connect a wallet to view verified receipts."
+        />
       )}
 
       {error && <div className="modal-error">{error}</div>}
 
       {buyer && !loading && receipts.length === 0 && (
-        <Panel className="empty-state">
-          <div className="panel-title">No receipts yet</div>
-          <p className="panel-copy">Purchase a resource to create an on-chain receipt PDA.</p>
-        </Panel>
+        <EmptyNotice
+          title="No receipts yet"
+          copy="Verified access proofs will appear here after payment."
+        />
       )}
 
       <section className="grid gap-6">

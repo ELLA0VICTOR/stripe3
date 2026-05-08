@@ -10,6 +10,13 @@ const typeLabels = {
   agent: "AI tool",
   dataset: "Dataset",
   file: "Digital file",
+  report: "Report",
+  course: "Course",
+  template: "Template",
+  model: "Model",
+  webhook: "Webhook",
+  membership: "Membership",
+  plugin: "Plugin",
 };
 
 export function ResourceForm({ onResourceCreated }) {
@@ -17,6 +24,7 @@ export function ResourceForm({ onResourceCreated }) {
   const { connection } = useConnection();
   const [title, setTitle] = useState("");
   const [type, setType] = useState("api");
+  const [customType, setCustomType] = useState("");
   const [price, setPrice] = useState("0.003");
   const [description, setDescription] = useState("");
   const [protectedContent, setProtectedContent] = useState("");
@@ -39,7 +47,7 @@ export function ResourceForm({ onResourceCreated }) {
       const resource = {
         id: slugifyResourceId(title),
         title: title.trim(),
-        type: typeLabels[type],
+        type: type === "custom" ? customType.trim() : typeLabels[type],
         priceLamports: solToLamports(price),
         merchant: wallet.publicKey.toBase58(),
         status: "Live",
@@ -59,6 +67,7 @@ export function ResourceForm({ onResourceCreated }) {
       setMessage("Product is live. Buyers can now pay and unlock it.");
       setTitle("");
       setType("api");
+      setCustomType("");
       setPrice("0.003");
       setDescription("");
       setProtectedContent("");
@@ -74,7 +83,7 @@ export function ResourceForm({ onResourceCreated }) {
       <div>
         <div className="panel-title">Create paid resource</div>
         <p className="panel-copy">
-          Register an API, AI tool, dataset, file, or paid page. The product is created on Solana first, then the gateway stores the access metadata.
+          Register any paid digital resource. The product is created on Solana first, then the gateway stores the access metadata.
         </p>
       </div>
 
@@ -93,8 +102,26 @@ export function ResourceForm({ onResourceCreated }) {
             <option value="agent">AI tool</option>
             <option value="dataset">Dataset</option>
             <option value="file">Digital file</option>
+            <option value="report">Research report</option>
+            <option value="course">Course access</option>
+            <option value="template">Template</option>
+            <option value="model">Model / prompt pack</option>
+            <option value="webhook">Webhook</option>
+            <option value="membership">Membership</option>
+            <option value="plugin">Plugin / extension</option>
+            <option value="custom">Custom type</option>
           </Select>
         </Field>
+        {type === "custom" && (
+          <Field label="Custom type">
+            <TextInput
+              value={customType}
+              onChange={(event) => setCustomType(event.target.value)}
+              placeholder="Private community, signal room, license key..."
+              required
+            />
+          </Field>
+        )}
         <Field label="Price in SOL">
           <TextInput
             value={price}
