@@ -42,78 +42,169 @@ The receipt is not just a database row. It is a Solana PDA that can be verified 
 ## Workflow
 
 ```text
-Seller
-  |
-  | 1. Connect Solana wallet
-  | 2. Create resource with price and protected content
-  v
-Frontend
-  |
-  | createProduct(resource_id, price)
-  v
-Solana Program
-  |
-  | creates Product PDA
-  v
-Gateway Catalog
-  |
-  | stores resource metadata and protected payload
-  v
-Resource is live
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                              SELLER PUBLISH FLOW                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────┐
+│   Seller Wallet    │
+│ Phantom/Solflare   │
+└─────────┬──────────┘
+          │
+          │  1. Enter resource name, price, type, and protected content
+          │
+          v
+┌────────────────────┐
+│  stripe3 Frontend  │
+│  Resource Form     │
+└─────────┬──────────┘
+          │
+          │  2. createProduct(resource_id, price)
+          │
+          v
+┌────────────────────┐
+│  Solana Program    │
+│  Product PDA       │
+└─────────┬──────────┘
+          │
+          │  3. Product is stored on-chain with merchant, price, active flag
+          │
+          v
+┌────────────────────┐
+│  x402 Gateway      │
+│  Resource Catalog  │
+└─────────┬──────────┘
+          │
+          │  4. Metadata and protected payload are saved
+          │
+          v
+┌────────────────────┐
+│  Live Resource     │
+│  Ready for buyers  │
+└────────────────────┘
 ```
 
 ```text
-Buyer or Agent
-  |
-  | GET /api/protected/:resourceId
-  v
-Gateway
-  |
-  | 402 Payment Required
-  | payment terms: amount, merchant, program, product PDA
-  v
-Buyer Wallet
-  |
-  | signs Solana payment transaction
-  v
-Solana Program
-  |
-  | transfers SOL to merchant
-  | creates Receipt PDA for buyer + product
-  v
-Gateway
-  |
-  | verifies Receipt PDA on Solana
-  v
-Protected content unlocked
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                              BUYER ACCESS FLOW                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────┐
+│  Buyer or Agent    │
+│  Wants access      │
+└─────────┬──────────┘
+          │
+          │  1. GET /api/protected/:resourceId
+          │
+          v
+┌────────────────────┐
+│  x402 Gateway      │
+│  Protected Route   │
+└─────────┬──────────┘
+          │
+          │  2. Returns 402 Payment Required
+          │     terms: amount, merchant, network, program, Product PDA
+          │
+          v
+┌────────────────────┐
+│  Buyer Wallet      │
+│  Signs payment     │
+└─────────┬──────────┘
+          │
+          │  3. Sends Solana payment transaction
+          │
+          v
+┌────────────────────┐
+│  Solana Program    │
+│  Payment + Receipt │
+└─────────┬──────────┘
+          │
+          │  4. Transfers SOL to merchant
+          │  5. Creates Receipt PDA for buyer + product
+          │
+          v
+┌────────────────────┐
+│  x402 Gateway      │
+│  Receipt Verifier  │
+└─────────┬──────────┘
+          │
+          │  6. Verifies Receipt PDA on Solana
+          │
+          v
+┌────────────────────┐
+│ Protected Content  │
+│  Returned to buyer │
+└────────────────────┘
 ```
 
 ```text
-Need funds in production?
-  |
-  v
-LI.FI Widget
-  |
-  | bridge or swap from supported chains
-  v
-Solana wallet funded
-  |
-  v
-Buyer completes x402 payment
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         PRODUCTION FUNDING PATH                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────┐
+│ Buyer lacks funds  │
+│ on Solana mainnet  │
+└─────────┬──────────┘
+          │
+          │  1. Open embedded LI.FI widget
+          │
+          v
+┌────────────────────┐
+│      LI.FI         │
+│ Bridge / Swap UX   │
+└─────────┬──────────┘
+          │
+          │  2. Route liquidity from a supported chain into Solana
+          │
+          v
+┌────────────────────┐
+│ Funded Solana      │
+│ Wallet             │
+└─────────┬──────────┘
+          │
+          │  3. Buyer returns to stripe3 checkout
+          │
+          v
+┌────────────────────┐
+│ x402 Payment Flow  │
+│ Continues normally │
+└────────────────────┘
 ```
 
 ```text
-Seller take-down
-  |
-  | setProductActive(resource_id, false)
-  v
-Solana Product PDA inactive
-  |
-  v
-Gateway removes listing from shared catalog
-  |
-  v
-New buyers can no longer purchase the resource
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                              SELLER TAKE-DOWN                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────┐
+│ Seller Wallet      │
+│ Owns the resource  │
+└─────────┬──────────┘
+          │
+          │  1. Confirms take-down in the app
+          │
+          v
+┌────────────────────┐
+│ Solana Program     │
+│ setProductActive   │
+└─────────┬──────────┘
+          │
+          │  2. Product PDA active flag becomes false
+          │
+          v
+┌────────────────────┐
+│ x402 Gateway       │
+│ Shared Catalog     │
+└─────────┬──────────┘
+          │
+          │  3. Listing is removed after on-chain inactive state is verified
+          │
+          v
+┌────────────────────┐
+│ Resource Hidden    │
+│ No new purchases   │
+└────────────────────┘
 ```
 
 ## Architecture
