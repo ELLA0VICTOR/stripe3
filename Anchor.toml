@@ -12,6 +12,9 @@ stripe3 = "9FMFBdiH5dY91hUZ9sz4qqLRKTZhR7v29YPAnnU3VvcW"
 [programs.devnet]
 stripe3 = "9FMFBdiH5dY91hUZ9sz4qqLRKTZhR7v29YPAnnU3VvcW"
 
+[programs.mainnet]
+stripe3 = "9FMFBdiH5dY91hUZ9sz4qqLRKTZhR7v29YPAnnU3VvcW"
+
 [registry]
 url = "https://api.apr.dev"
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
+import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import { Layout } from "./components/layout/Layout";
 import { CookieConsent } from "./components/layout/CookieConsent";
 import { PaymentModal } from "./components/checkout/PaymentModal";
@@ -7,6 +7,7 @@ import { UnlockedContentModal } from "./components/checkout/UnlockedContentModal
 import { TakeDownResourceModal } from "./components/resources/TakeDownResourceModal";
 import { resources as seededResources } from "./lib/data";
 import { fetchResources, takeDownResource } from "./lib/gatewayClient";
+import { createStripe3Connection } from "./lib/networks";
 import { setProductActive } from "./lib/stripe3Program";
 import { getResourceById } from "./lib/utils";
 import { Landing } from "./pages/Landing";
@@ -23,7 +24,6 @@ const pageMap = {
 
 function App() {
   const wallet = useAnchorWallet();
-  const { connection } = useConnection();
   const [activePage, setActivePage] = useState("landing");
   const [mode, setMode] = useState("devnet");
   const [resourceList, setResourceList] = useState(seededResources);
@@ -37,6 +37,7 @@ function App() {
   const [takeDownCandidate, setTakeDownCandidate] = useState(null);
   const [takingDownResourceId, setTakingDownResourceId] = useState("");
   const unlockTimerRef = useRef(null);
+  const connection = useMemo(() => createStripe3Connection(mode), [mode]);
 
   const selectedResource = useMemo(
     () => getResourceById(resourceList, selectedResourceId),
@@ -51,17 +52,15 @@ function App() {
     async function loadResources() {
       try {
         setResourcesLoading(true);
-        const nextResources = await fetchResources();
+        const nextResources = await fetchResources(mode);
 
         if (!active) return;
-        if (nextResources.length) {
-          setResourceList(nextResources);
-          setSelectedResourceId((current) => (
-            nextResources.some((resource) => resource.id === current)
-              ? current
-              : nextResources[0].id
-          ));
-        }
+        setResourceList(nextResources);
+        setSelectedResourceId((current) => (
+          nextResources.some((resource) => resource.id === current)
+            ? current
+            : nextResources[0]?.id || ""
+        ));
         setResourcesError("");
       } catch (error) {
         if (active) setResourcesError(error.message || "Gateway is not reachable.");
@@ -74,7 +73,7 @@ function App() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [mode]);
 
   useEffect(() => () => {
     if (unlockTimerRef.current) window.clearTimeout(unlockTimerRef.current);

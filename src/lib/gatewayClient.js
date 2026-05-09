@@ -18,8 +18,10 @@ function protectedUrl(resource, buyer) {
   return url.toString();
 }
 
-export async function fetchResources() {
-  const response = await fetch(gatewayUrl("/api/resources"));
+export async function fetchResources(mode) {
+  const url = new URL(gatewayUrl("/api/resources"));
+  if (mode) url.searchParams.set("mode", mode);
+  const response = await fetch(url.toString());
   const body = await response.json();
 
   if (!response.ok) {
@@ -101,11 +103,12 @@ export async function unlockProtectedResource({ resource, buyer, payment }) {
   return { body, settlement };
 }
 
-export async function fetchReceiptsForBuyer(buyer) {
+export async function fetchReceiptsForBuyer(buyer, mode) {
   if (!buyer) return [];
 
   const url = new URL(gatewayUrl("/api/receipts"));
   url.searchParams.set("buyer", buyer);
+  if (mode) url.searchParams.set("mode", mode);
   const response = await fetch(url.toString());
   const body = await response.json();
 

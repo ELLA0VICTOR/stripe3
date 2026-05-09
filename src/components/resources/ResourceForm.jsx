@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
+import { useMemo, useState } from "react";
+import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import { registerResource } from "../../lib/gatewayClient";
+import { createStripe3Connection, getStripe3Network } from "../../lib/networks";
 import { createProduct } from "../../lib/stripe3Program";
 import { slugifyResourceId, solToLamports } from "../../lib/utils";
 import { Button, Field, Panel, Select, TextArea, TextInput } from "../ui";
@@ -19,9 +20,10 @@ const typeLabels = {
   plugin: "Plugin",
 };
 
-export function ResourceForm({ onResourceCreated }) {
+export function ResourceForm({ mode = "devnet", onResourceCreated }) {
   const wallet = useAnchorWallet();
-  const { connection } = useConnection();
+  const networkConfig = getStripe3Network(mode);
+  const connection = useMemo(() => createStripe3Connection(mode), [mode]);
   const [title, setTitle] = useState("");
   const [type, setType] = useState("api");
   const [customType, setCustomType] = useState("");
@@ -50,6 +52,8 @@ export function ResourceForm({ onResourceCreated }) {
         type: type === "custom" ? customType.trim() : typeLabels[type],
         priceLamports: solToLamports(price),
         merchant: wallet.publicKey.toBase58(),
+        network: networkConfig.network,
+        programId: networkConfig.programId,
         status: "Live",
         endpoint: "",
         description: description.trim(),

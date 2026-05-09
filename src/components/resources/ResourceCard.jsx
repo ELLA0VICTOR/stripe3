@@ -1,5 +1,6 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import { GATEWAY_URL } from "../../lib/gatewayClient";
+import { formatSolanaNetwork } from "../../lib/networks";
 import { formatAddress, formatLamports } from "../../lib/utils";
 import { Badge, Button, DataLine, Panel } from "../ui";
 
@@ -30,6 +31,7 @@ export function ResourceCard({ resource, onPurchaseResource, onTakeDownResource,
 
       <div className="data-list">
         <DataLine label="Type" value={resource.type} />
+        <DataLine label="Network" value={formatSolanaNetwork(resource.network)} />
         <DataLine label="Endpoint" value={resource.endpoint} />
         <DataLine label="Merchant" value={formatAddress(resource.merchant)} />
       </div>

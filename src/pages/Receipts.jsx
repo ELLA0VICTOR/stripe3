@@ -5,7 +5,7 @@ import { formatAddress, formatLamports } from "../lib/utils";
 import { Badge, Button, DataLine, Panel } from "../components/ui";
 import { EmptyNotice } from "../components/ui/EmptyNotice";
 
-export function Receipts() {
+export function Receipts({ mode = "devnet" }) {
   const { publicKey } = useWallet();
   const [receipts, setReceipts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,7 @@ export function Receipts() {
 
     try {
       setLoading(true);
-      setReceipts(await fetchReceiptsForBuyer(buyer));
+      setReceipts(await fetchReceiptsForBuyer(buyer, mode));
     } catch (receiptError) {
       setError(receiptError.message || "Unable to load receipts.");
     } finally {
@@ -35,7 +35,7 @@ export function Receipts() {
 
     let ignore = false;
 
-    fetchReceiptsForBuyer(buyer)
+    fetchReceiptsForBuyer(buyer, mode)
       .then((data) => {
         if (!ignore) setReceipts(data);
       })
@@ -46,7 +46,7 @@ export function Receipts() {
     return () => {
       ignore = true;
     };
-  }, [buyer]);
+  }, [buyer, mode]);
 
   return (
     <div className="page-stack">

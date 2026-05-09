@@ -1,6 +1,7 @@
-import { lazy, Suspense, useState } from "react";
-import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
+import { lazy, Suspense, useMemo, useState } from "react";
+import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import { requestPaymentTerms, unlockProtectedResource } from "../../lib/gatewayClient";
+import { createStripe3Connection, getStripe3Network } from "../../lib/networks";
 import { formatLamports } from "../../lib/utils";
 import { payForResource } from "../../lib/stripe3Program";
 import { Badge, Button, DataLine, Panel } from "../ui";
@@ -10,8 +11,9 @@ const LiFiWidget = lazy(() =>
 );
 
 export function PaymentModal({ resource, mode, onClose, onConfirm }) {
-  const { connection } = useConnection();
   const wallet = useAnchorWallet();
+  const networkConfig = getStripe3Network(mode);
+  const connection = useMemo(() => createStripe3Connection(mode), [mode]);
   const [error, setError] = useState("");
   const [paying, setPaying] = useState(false);
   const [showFunding, setShowFunding] = useState(false);
@@ -49,7 +51,7 @@ export function PaymentModal({ resource, mode, onClose, onConfirm }) {
         protocol: "x402",
         x402Version: 2,
         scheme: "solana-transfer",
-        network: "solana-devnet",
+        network: networkConfig.network,
         resourceId: resource.id,
         buyer,
         product: result.product,
@@ -95,7 +97,7 @@ export function PaymentModal({ resource, mode, onClose, onConfirm }) {
           <DataLine label="Resource" value={resource.title} />
           <DataLine label="Endpoint" value={resource.endpoint} />
           <DataLine label="Amount" value={formatLamports(resource.priceLamports)} />
-          <DataLine label="Settlement" value="Solana devnet" />
+          <DataLine label="Settlement" value={networkConfig.displayName} />
           <DataLine label="Funding" value={production ? "LI.FI mainnet routes" : "Devnet wallet balance"} />
         </div>
 

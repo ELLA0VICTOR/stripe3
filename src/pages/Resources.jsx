@@ -2,6 +2,7 @@ import { ResourceCard } from "../components/resources/ResourceCard";
 import { ResourceForm } from "../components/resources/ResourceForm";
 
 export function Resources({
+  mode,
   resources = [],
   resourcesLoading,
   resourcesError,
@@ -53,7 +54,7 @@ export function Resources({
       </section>
 
       <section>
-        <ResourceForm onResourceCreated={onResourceCreated} />
+        <ResourceForm mode={mode} onResourceCreated={onResourceCreated} />
       </section>
     </div>
   );

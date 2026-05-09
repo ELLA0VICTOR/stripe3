@@ -2,32 +2,42 @@ import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { Buffer } from "buffer";
 import idl from "../idl/stripe3.json";
+import { assertStripe3ProgramConfigured, getModeFromNetwork } from "./networks";
 
 export const STRIPE3_PROGRAM_ID = new PublicKey(idl.address);
 
+function getProgramIdForResource(resource) {
+  const mode = getModeFromNetwork(resource.network);
+  const config = assertStripe3ProgramConfigured(mode);
+  return new PublicKey(resource.programId || config.programId);
+}
+
 export function getProductPda(resource) {
   const merchant = new PublicKey(resource.merchant);
+  const programId = getProgramIdForResource(resource);
   return PublicKey.findProgramAddressSync(
     [Buffer.from("product"), merchant.toBuffer(), Buffer.from(resource.id)],
-    STRIPE3_PROGRAM_ID,
+    programId,
   )[0];
 }
 
 export function getReceiptPda(resource, buyer) {
   const product = getProductPda(resource);
+  const programId = getProgramIdForResource(resource);
   return PublicKey.findProgramAddressSync(
     [Buffer.from("receipt"), product.toBuffer(), buyer.toBuffer()],
-    STRIPE3_PROGRAM_ID,
+    programId,
   )[0];
 }
 
-export function createStripe3Program(connection, wallet) {
+export function createStripe3Program(connection, wallet, resource) {
+  const programId = getProgramIdForResource(resource);
   const provider = new AnchorProvider(connection, wallet, {
     commitment: "confirmed",
     preflightCommitment: "confirmed",
   });
 
-  return new Program(idl, provider);
+  return new Program({ ...idl, address: programId.toBase58() }, provider);
 }
 
 export async function createProduct({ connection, wallet, resource }) {
@@ -35,7 +45,7 @@ export async function createProduct({ connection, wallet, resource }) {
     throw new Error("Connect a Solana wallet first.");
   }
 
-  const program = createStripe3Program(connection, wallet);
+  const program = createStripe3Program(connection, wallet, resource);
   const product = getProductPda(resource);
   const existingProduct = await connection.getAccountInfo(product, "confirmed");
 
@@ -84,7 +94,7 @@ export async function setProductActive({ connection, wallet, resource, active })
     throw new Error("Connect the seller wallet for this resource.");
   }
 
-  const program = createStripe3Program(connection, wallet);
+  const program = createStripe3Program(connection, wallet, resource);
   const product = getProductPda(resource);
 
   const signature = await program.methods
@@ -107,7 +117,7 @@ export async function payForResource({ connection, wallet, resource }) {
     throw new Error("Connect a Solana wallet first.");
   }
 
-  const program = createStripe3Program(connection, wallet);
+  const program = createStripe3Program(connection, wallet, resource);
   const merchant = new PublicKey(resource.merchant);
   const product = getProductPda(resource);
   const receipt = getReceiptPda(resource, wallet.publicKey);

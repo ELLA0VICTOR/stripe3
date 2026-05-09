@@ -1,3 +1,4 @@
+import { formatSolanaNetwork } from "../../lib/networks";
 import { formatAddress, formatLamports } from "../../lib/utils";
 import { Badge, DataLine, Panel } from "../ui";
 
@@ -48,7 +49,7 @@ export function AgentConsole({ resource, mode, paymentResult, activeStep = 0 }) 
 
       <div className="data-list">
         <DataLine label="Amount" value={formatLamports(resource.priceLamports)} />
-        <DataLine label="Network" value={mode === "production" ? "Solana mainnet" : "Solana devnet"} />
+        <DataLine label="Network" value={formatSolanaNetwork(resource.network || (mode === "production" ? "solana-mainnet" : "solana-devnet"))} />
         <DataLine label="Endpoint" value={resource.endpoint} />
         <DataLine label="Receipt" value={paymentResult?.receipt ? formatAddress(paymentResult.receipt) : "Pending"} />
         <DataLine label="Signature" value={paymentResult?.signature ? formatAddress(paymentResult.signature) : "Existing receipt"} />

@@ -10,9 +10,27 @@ import { resources as seededResources } from "../src/lib/data.js";
 import idl from "../src/idl/stripe3.json" with { type: "json" };
 
 const PORT = process.env.PORT || 4100;
-const RPC_URL = process.env.SOLANA_RPC_URL || process.env.ANCHOR_PROVIDER_URL || "https://api.devnet.solana.com";
-const PROGRAM_ID = new PublicKey(idl.address);
-const connection = new Connection(RPC_URL, "confirmed");
+const DEVNET_RPC_URL = process.env.SOLANA_DEVNET_RPC_URL || process.env.SOLANA_RPC_URL || process.env.ANCHOR_PROVIDER_URL || "https://api.devnet.solana.com";
+const MAINNET_RPC_URL = process.env.SOLANA_MAINNET_RPC_URL || "https://api.mainnet-beta.solana.com";
+const DEVNET_PROGRAM_ID = process.env.STRIPE3_DEVNET_PROGRAM_ID || idl.address;
+const MAINNET_PROGRAM_ID = process.env.STRIPE3_MAINNET_PROGRAM_ID || "";
+const NETWORKS = {
+  "solana-devnet": {
+    mode: "devnet",
+    network: "solana-devnet",
+    displayName: "Solana devnet",
+    rpcUrl: DEVNET_RPC_URL,
+    programId: DEVNET_PROGRAM_ID,
+  },
+  "solana-mainnet": {
+    mode: "production",
+    network: "solana-mainnet",
+    displayName: "Solana mainnet",
+    rpcUrl: MAINNET_RPC_URL,
+    programId: MAINNET_PROGRAM_ID,
+  },
+};
+const connections = new Map();
 const PAYMENT_REQUIRED_HEADER = "PAYMENT-REQUIRED";
 const PAYMENT_SIGNATURE_HEADER = "PAYMENT-SIGNATURE";
 const PAYMENT_RESPONSE_HEADER = "PAYMENT-RESPONSE";
@@ -20,6 +38,41 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.STRIPE3_DATA_DIR || path.join(__dirname, "..", ".data");
 const RESOURCE_STORE = path.join(DATA_DIR, "resources.json");
 const PRODUCT_ID_PATTERN = /^[a-z0-9][a-z0-9-]{2,31}$/;
+
+function networkFromMode(mode) {
+  return mode === "production" ? "solana-mainnet" : "solana-devnet";
+}
+
+function getNetworkConfig(network = "solana-devnet") {
+  const config = NETWORKS[network] || NETWORKS[networkFromMode(network)] || NETWORKS["solana-devnet"];
+
+  if (!config.programId) {
+    throw new Error("Mainnet program ID is not configured. Set STRIPE3_MAINNET_PROGRAM_ID after deploying the program.");
+  }
+
+  return config;
+}
+
+function getConnection(network = "solana-devnet") {
+  const config = getNetworkConfig(network);
+  const cached = connections.get(config.network);
+
+  if (cached) return cached;
+
+  const connection = new Connection(config.rpcUrl, "confirmed");
+  connections.set(config.network, connection);
+  return connection;
+}
+
+function getProgramId(resourceOrNetwork = "solana-devnet") {
+  const network = typeof resourceOrNetwork === "string"
+    ? resourceOrNetwork
+    : resourceOrNetwork.network || "solana-devnet";
+  const config = getNetworkConfig(network);
+  return new PublicKey(typeof resourceOrNetwork === "object" && resourceOrNetwork.programId
+    ? resourceOrNetwork.programId
+    : config.programId);
+}
 
 function sendJson(res, statusCode, payload, headers = {}) {
   res.writeHead(statusCode, {
@@ -76,6 +129,9 @@ function normalizeResource(input) {
   const description = cleanText(input.description, "", 320);
   const protectedContent = cleanText(input.protectedContent, "", 1000);
   const merchant = cleanText(input.merchant, "", 64);
+  const network = cleanText(input.network, "solana-devnet", 32);
+  const networkConfig = getNetworkConfig(network);
+  const programId = cleanText(input.programId, networkConfig.programId, 64);
   const priceLamports = Number(input.priceLamports);
 
   if (!PRODUCT_ID_PATTERN.test(id)) {
@@ -91,6 +147,7 @@ function normalizeResource(input) {
   }
 
   new PublicKey(merchant);
+  new PublicKey(programId);
 
   return {
     id,
@@ -98,12 +155,25 @@ function normalizeResource(input) {
     type,
     priceLamports,
     merchant,
+    network: networkConfig.network,
+    programId,
     status: "Live",
     endpoint: `/api/protected/${id}`,
     description,
     protectedContent,
     source: "merchant",
     createdAt: input.createdAt || new Date().toISOString(),
+  };
+}
+
+function hydrateResource(resource) {
+  const network = resource.network || "solana-devnet";
+  const networkConfig = NETWORKS[network] || NETWORKS["solana-devnet"];
+
+  return {
+    ...resource,
+    network: networkConfig.network,
+    programId: resource.programId || networkConfig.programId,
   };
 }
 
@@ -123,13 +193,19 @@ async function writeStoredResources(resources) {
   await fs.writeFile(RESOURCE_STORE, JSON.stringify(resources, null, 2));
 }
 
-async function getAllResources() {
-  const storedResources = await readStoredResources();
-  const seededIds = new Set(seededResources.map((resource) => resource.id));
-  return [
-    ...seededResources,
+async function getAllResources(network) {
+  const hydratedSeededResources = seededResources.map(hydrateResource);
+  const storedResources = (await readStoredResources()).map(hydrateResource);
+  const seededIds = new Set(hydratedSeededResources.map((resource) => resource.id));
+  const resources = [
+    ...hydratedSeededResources,
     ...storedResources.filter((resource) => !seededIds.has(resource.id)),
   ];
+
+  if (!network) return resources;
+
+  const networkConfig = getNetworkConfig(network);
+  return resources.filter((resource) => resource.network === networkConfig.network);
 }
 
 async function getResource(resourceId) {
@@ -139,17 +215,19 @@ async function getResource(resourceId) {
 
 function getProductPda(resource) {
   const merchant = new PublicKey(resource.merchant);
+  const programId = getProgramId(resource);
   return PublicKey.findProgramAddressSync(
     [Buffer.from("product"), merchant.toBuffer(), Buffer.from(resource.id)],
-    PROGRAM_ID,
+    programId,
   )[0];
 }
 
 function getReceiptPda(resource, buyer) {
   const product = getProductPda(resource);
+  const programId = getProgramId(resource);
   return PublicKey.findProgramAddressSync(
     [Buffer.from("receipt"), product.toBuffer(), new PublicKey(buyer).toBuffer()],
-    PROGRAM_ID,
+    programId,
   )[0];
 }
 
@@ -175,15 +253,18 @@ async function findOnchainReceipt(resource, buyer) {
   if (!buyer) return null;
 
   try {
+    const connection = getConnection(resource.network);
+    const programId = getProgramId(resource);
     const receiptPda = getReceiptPda(resource, buyer);
     const account = await connection.getAccountInfo(receiptPda, "confirmed");
 
     if (!account) return null;
-    if (!account.owner.equals(PROGRAM_ID)) return null;
+    if (!account.owner.equals(programId)) return null;
 
     return {
       resourceId: resource.id,
       buyer,
+      network: resource.network,
       pda: receiptPda.toBase58(),
       verified: true,
       source: "solana",
@@ -193,9 +274,9 @@ async function findOnchainReceipt(resource, buyer) {
   }
 }
 
-async function findAllOnchainReceipts(buyer) {
+async function findAllOnchainReceipts(buyer, network) {
   if (!buyer) return [];
-  const resources = await getAllResources();
+  const resources = await getAllResources(network);
 
   const receipts = await Promise.all(
     resources.map(async (resource) => {
@@ -234,6 +315,10 @@ async function verifyPaymentSignature(resource, encodedPayload, buyer) {
     return { ok: false, error: "Payment payload does not match this resource." };
   }
 
+  if (payload.network !== resource.network) {
+    return { ok: false, error: "Payment network does not match this resource." };
+  }
+
   if (buyer && payload.buyer !== buyer) {
     return { ok: false, error: "Payment buyer does not match request buyer." };
   }
@@ -250,7 +335,7 @@ async function verifyPaymentSignature(resource, encodedPayload, buyer) {
     receipt,
     settlement: {
       success: true,
-      network: "solana-devnet",
+      network: resource.network,
       resourceId: resource.id,
       buyer: payload.buyer,
       receipt: receipt.pda,
@@ -262,6 +347,7 @@ async function verifyPaymentSignature(resource, encodedPayload, buyer) {
 function buildPaymentRequired(resource, buyer) {
   const invoiceId = `inv_${resource.id}_${Date.now()}`;
   const productPda = getProductPda(resource);
+  const programId = getProgramId(resource);
 
   return {
     x402Version: 2,
@@ -272,17 +358,17 @@ function buildPaymentRequired(resource, buyer) {
     accepts: [
       {
         scheme: "solana-transfer",
-        network: "solana-devnet",
+        network: resource.network,
         asset: "SOL",
         amountLamports: resource.priceLamports,
         invoiceId,
         resourceId: resource.id,
         buyer: buyer || null,
-        programId: PROGRAM_ID.toBase58(),
+        programId: programId.toBase58(),
         product: productPda.toBase58(),
         merchant: resource.merchant,
         payTo: resource.merchant,
-        settlementProgram: PROGRAM_ID.toBase58(),
+        settlementProgram: programId.toBase58(),
       },
     ],
     extensions: {
@@ -300,9 +386,11 @@ async function registerResource(body) {
   }
 
   const productPda = getProductPda(resource);
+  const connection = getConnection(resource.network);
+  const programId = getProgramId(resource);
   const productAccount = await connection.getAccountInfo(productPda, "confirmed");
 
-  if (!productAccount || !productAccount.owner.equals(PROGRAM_ID)) {
+  if (!productAccount || !productAccount.owner.equals(programId)) {
     throw new Error("Product PDA was not found on-chain. Create the Solana product first.");
   }
 
@@ -318,7 +406,7 @@ async function registerResource(body) {
 }
 
 async function takeDownResource(resourceId, body) {
-  const storedResources = await readStoredResources();
+  const storedResources = (await readStoredResources()).map(hydrateResource);
   const resource = storedResources.find((item) => item.id === resourceId);
 
   if (!resource) {
@@ -330,9 +418,11 @@ async function takeDownResource(resourceId, body) {
   }
 
   const productPda = getProductPda(resource);
+  const connection = getConnection(resource.network);
+  const programId = getProgramId(resource);
   const productAccount = await connection.getAccountInfo(productPda, "confirmed");
 
-  if (!productAccount || !productAccount.owner.equals(PROGRAM_ID)) {
+  if (!productAccount || !productAccount.owner.equals(programId)) {
     throw new Error("Product PDA was not found on-chain.");
   }
 
@@ -369,7 +459,8 @@ async function handleRequest(req, res) {
   }
 
   if (url.pathname === "/api/resources" && req.method === "GET") {
-    const resources = await getAllResources();
+    const requestedNetwork = url.searchParams.get("network") || networkFromMode(url.searchParams.get("mode"));
+    const resources = await getAllResources(requestedNetwork);
     sendJson(res, 200, { ok: true, resources });
     return;
   }
@@ -417,7 +508,8 @@ async function handleRequest(req, res) {
 
   if (url.pathname === "/api/receipts" && req.method === "GET") {
     const buyer = url.searchParams.get("buyer");
-    const data = await findAllOnchainReceipts(buyer);
+    const requestedNetwork = url.searchParams.get("network") || networkFromMode(url.searchParams.get("mode"));
+    const data = await findAllOnchainReceipts(buyer, requestedNetwork);
     sendJson(res, 200, { ok: true, receipts: data });
     return;
   }
@@ -482,7 +574,7 @@ async function handleRequest(req, res) {
     }, {
       [PAYMENT_RESPONSE_HEADER]: encodePaymentHeader({
         success: true,
-        network: "solana-devnet",
+        network: resource.network,
         resourceId: resource.id,
         buyer,
         receipt: receipt.pda,
