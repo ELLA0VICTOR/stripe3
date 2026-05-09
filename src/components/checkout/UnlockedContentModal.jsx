@@ -12,6 +12,7 @@ export function UnlockedContentModal({ paymentResult, resource, onClose }) {
   if (!paymentResult) return null;
 
   const content = getUnlockedContent(paymentResult);
+  const unlockedFile = paymentResult?.unlock?.payload?.file;
   const paidResource = resource || paymentResult.resource;
   const network = paidResource?.network || paymentResult.settlement?.network || "solana-devnet";
   const productPda = paymentResult.product || paidResource?.productPda;
@@ -46,6 +47,21 @@ export function UnlockedContentModal({ paymentResult, resource, onClose }) {
         <div className="unlocked-content-box">
           <pre>{content}</pre>
         </div>
+
+        {unlockedFile?.url && (
+          <div className="unlocked-file-box">
+            <div>
+              <span>File</span>
+              <strong>{unlockedFile.name}</strong>
+            </div>
+            {unlockedFile.type?.startsWith("image/") && (
+              <img src={unlockedFile.url} alt={unlockedFile.name} />
+            )}
+            <a className="button button-secondary" href={unlockedFile.url} target="_blank" rel="noreferrer">
+              Open file
+            </a>
+          </div>
+        )}
 
         <div className="data-list mt-5">
           {paidResource && <DataLine label="Resource" value={paidResource.title} />}

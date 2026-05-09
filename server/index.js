@@ -41,6 +41,10 @@ const PRODUCT_ID_PATTERN = /^[a-z0-9][a-z0-9-]{2,31}$/;
 const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const SUPABASE_RESOURCES_TABLE = process.env.SUPABASE_RESOURCES_TABLE || "stripe3_resources";
+const SUPABASE_RESOURCE_BUCKET = process.env.SUPABASE_RESOURCE_BUCKET || "stripe3-resources";
+const SUPABASE_SIGNED_URL_TTL_SECONDS = Number(process.env.SUPABASE_SIGNED_URL_TTL_SECONDS || 600);
+const STRIPE3_MAX_UPLOAD_BYTES = Number(process.env.STRIPE3_MAX_UPLOAD_BYTES || 25 * 1024 * 1024);
+const STRIPE3_MAX_REQUEST_BYTES = Number(process.env.STRIPE3_MAX_REQUEST_BYTES || 40 * 1024 * 1024);
 const USE_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 const STORAGE_DRIVER = USE_SUPABASE ? "supabase" : "file";
 
@@ -104,6 +108,11 @@ function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
     req.on("data", (chunk) => {
+      if (Buffer.byteLength(body) + chunk.length > STRIPE3_MAX_REQUEST_BYTES) {
+        reject(new Error("Request body is too large."));
+        req.destroy();
+        return;
+      }
       body += chunk;
     });
     req.on("end", () => {
@@ -153,6 +162,138 @@ async function supabaseRequest(pathname, options = {}) {
   return body;
 }
 
+async function supabaseStorageRequest(pathname, options = {}) {
+  const response = await fetch(`${SUPABASE_URL}/storage/v1/${pathname}`, {
+    ...options,
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      ...(options.headers || {}),
+    },
+  });
+  const text = await response.text();
+  let body;
+
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    body = text ? { error: text } : null;
+  }
+
+  if (!response.ok) {
+    throw new Error(body?.message || body?.error || `Supabase storage request failed with ${response.status}`);
+  }
+
+  return body;
+}
+
+function sanitizeFileName(name = "resource-file") {
+  const cleaned = String(name)
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 120);
+
+  return cleaned || "resource-file";
+}
+
+function normalizeProtectedFile(upload) {
+  if (!upload) return null;
+
+  const name = sanitizeFileName(upload.name);
+  const contentType = cleanText(upload.type, "application/octet-stream", 120);
+  const dataBase64 = String(upload.dataBase64 || "").replace(/^data:[^;]+;base64,/, "");
+  const size = Number(upload.size || 0);
+
+  if (!dataBase64) {
+    throw new Error("Uploaded file is missing file data.");
+  }
+
+  const buffer = Buffer.from(dataBase64, "base64");
+
+  if (!buffer.length) {
+    throw new Error("Uploaded file is empty.");
+  }
+
+  if (buffer.length > STRIPE3_MAX_UPLOAD_BYTES) {
+    throw new Error(`Uploaded file is too large. Max size is ${Math.floor(STRIPE3_MAX_UPLOAD_BYTES / 1024 / 1024)} MB.`);
+  }
+
+  if (size && Math.abs(size - buffer.length) > 2) {
+    throw new Error("Uploaded file size does not match the payload.");
+  }
+
+  return { name, contentType, size: buffer.length, buffer };
+}
+
+async function uploadProtectedFile(resource, upload) {
+  const file = normalizeProtectedFile(upload);
+
+  if (!file) return null;
+
+  if (!USE_SUPABASE) {
+    throw new Error("File uploads require Supabase storage configuration.");
+  }
+
+  const objectPath = [
+    resource.network,
+    resource.merchant,
+    resource.id,
+    `${Date.now()}-${file.name}`,
+  ].join("/");
+
+  await supabaseStorageRequest(`object/${SUPABASE_RESOURCE_BUCKET}/${objectPath}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": file.contentType,
+      "Cache-Control": "3600",
+      "x-upsert": "false",
+    },
+    body: file.buffer,
+  });
+
+  return {
+    name: file.name,
+    type: file.contentType,
+    size: file.size,
+    bucket: SUPABASE_RESOURCE_BUCKET,
+    path: objectPath,
+  };
+}
+
+async function getProtectedFileAccess(resource) {
+  if (!resource.protectedFile?.bucket || !resource.protectedFile?.path) return null;
+
+  if (!USE_SUPABASE) {
+    return {
+      ...resource.protectedFile,
+      url: null,
+      unavailable: true,
+    };
+  }
+
+  const signed = await supabaseStorageRequest(
+    `object/sign/${resource.protectedFile.bucket}/${resource.protectedFile.path}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ expiresIn: SUPABASE_SIGNED_URL_TTL_SECONDS }),
+    },
+  );
+  const signedURL = signed?.signedURL || signed?.signedUrl || "";
+  const url = signedURL.startsWith("http")
+    ? signedURL
+    : `${SUPABASE_URL}/storage/v1${signedURL}`;
+
+  return {
+    name: resource.protectedFile.name,
+    type: resource.protectedFile.type,
+    size: resource.protectedFile.size,
+    url,
+    expiresIn: SUPABASE_SIGNED_URL_TTL_SECONDS,
+  };
+}
+
 function normalizeResource(input) {
   const id = cleanText(input.id, "", 32).toLowerCase();
   const title = cleanText(input.title, "", 80);
@@ -194,6 +335,16 @@ function normalizeResource(input) {
     protectedContent,
     source: "merchant",
     createdAt: input.createdAt || new Date().toISOString(),
+  };
+}
+
+async function buildUnlockedPayload(resource) {
+  const file = await getProtectedFileAccess(resource);
+
+  return {
+    signal: resource.protectedContent || (file ? `Unlocked file: ${file.name}` : `Unlocked ${resource.title}.`),
+    note: "Served after x402 payment and receipt verification.",
+    file,
   };
 }
 
@@ -470,8 +621,10 @@ async function registerResource(body) {
     throw new Error("Product PDA was not found on-chain. Create the Solana product first.");
   }
 
+  const protectedFile = await uploadProtectedFile(resource, body.protectedFile);
   const storedResource = {
     ...resource,
+    protectedFile,
     productPda: productPda.toBase58(),
     creationSignature: cleanText(body.creationSignature, "", 120),
   };
@@ -620,30 +773,28 @@ async function handleRequest(req, res) {
         return;
       }
 
+      const payload = await buildUnlockedPayload(resource);
+
       sendJson(res, 200, {
         ok: true,
         resource: resource.title,
         unlocked: true,
         receipt: verification.receipt,
-        payload: {
-          signal: resource.protectedContent || `Unlocked ${resource.title}.`,
-          note: "Served after x402 payment and receipt verification.",
-        },
+        payload,
       }, {
         [PAYMENT_RESPONSE_HEADER]: encodePaymentHeader(verification.settlement),
       });
       return;
     }
 
+    const payload = await buildUnlockedPayload(resource);
+
     sendJson(res, 200, {
       ok: true,
       resource: resource.title,
       unlocked: true,
       receipt,
-      payload: {
-        signal: resource.protectedContent || `Unlocked ${resource.title}.`,
-        note: "Served after receipt verification.",
-      },
+      payload,
     }, {
       [PAYMENT_RESPONSE_HEADER]: encodePaymentHeader({
         success: true,

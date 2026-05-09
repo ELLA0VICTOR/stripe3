@@ -32,6 +32,7 @@ export function ResourceCard({ resource, onPurchaseResource, onViewIntegration, 
       <div className="data-list">
         <DataLine label="Type" value={resource.type} />
         <DataLine label="Network" value={formatSolanaNetwork(resource.network)} />
+        {resource.protectedFile && <DataLine label="File" value={resource.protectedFile.name} />}
         <DataLine label="Endpoint" value={resource.endpoint} />
         <DataLine label="Merchant" value={formatAddress(resource.merchant)} />
       </div>

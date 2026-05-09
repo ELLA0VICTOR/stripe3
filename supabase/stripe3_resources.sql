@@ -32,3 +32,10 @@ for each row
 execute function public.set_stripe3_resources_updated_at();
 
 alter table public.stripe3_resources enable row level security;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('stripe3-resources', 'stripe3-resources', false, 52428800, null)
+on conflict (id) do update
+set public = false,
+    file_size_limit = 52428800,
+    allowed_mime_types = null;

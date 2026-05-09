@@ -341,7 +341,8 @@ stripe3 keeps payment truth on Solana and catalog data in Supabase:
 
 - Product PDA: merchant, product ID, price, and active status.
 - Receipt PDA: buyer access proof after payment.
-- Supabase: resource title, description, endpoint, and protected payload.
+- Supabase database: resource title, description, endpoint, and protected text.
+- Supabase Storage: optional protected files such as images, PDFs, CSVs, JSON, archives, tools, articles, or datasets.
 
 Create the Supabase table by running this file in the Supabase SQL editor:
 
@@ -355,9 +356,12 @@ Set these only on the backend service:
 SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY
 SUPABASE_RESOURCES_TABLE
+SUPABASE_RESOURCE_BUCKET
+SUPABASE_SIGNED_URL_TTL_SECONDS
 ```
 
 Do not expose the service role key in Vercel or any frontend environment. `STRIPE3_DATA_DIR` is only a local fallback when Supabase is not configured.
+Uploaded files stay in a private bucket and are served through short-lived signed URLs after receipt verification.
 
 ## Network Modes
 
@@ -416,6 +420,10 @@ STRIPE3_MAINNET_PROGRAM_ID
 SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY
 SUPABASE_RESOURCES_TABLE
+SUPABASE_RESOURCE_BUCKET
+SUPABASE_SIGNED_URL_TTL_SECONDS
+STRIPE3_MAX_UPLOAD_BYTES
+STRIPE3_MAX_REQUEST_BYTES
 STRIPE3_DATA_DIR
 ```
 

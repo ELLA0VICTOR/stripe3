@@ -711,6 +711,58 @@ canvas {
   align-items: end;
 }
 
+.file-upload-row {
+  display: grid;
+  gap: 10px;
+}
+
+.file-input {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-secondary);
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.file-input::file-selector-button {
+  margin-right: 12px;
+  border: 1px solid var(--line-strong);
+  background: #050505;
+  color: var(--text-primary);
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 900;
+}
+
+.file-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 10px 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.file-summary span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-summary button {
+  border: 0;
+  background: transparent;
+  color: var(--red);
+  font-weight: 900;
+}
+
 .form-status {
   grid-column: 1 / -1;
   border: 1px solid rgba(73, 255, 138, 0.25);
@@ -987,6 +1039,46 @@ canvas {
   font-size: 13px;
   line-height: 1.65;
   font-weight: 800;
+}
+
+.unlocked-file-box {
+  margin-top: 12px;
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line-strong);
+  background: #000;
+  padding: 14px;
+}
+
+.unlocked-file-box > div {
+  display: grid;
+  gap: 4px;
+}
+
+.unlocked-file-box span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.unlocked-file-box strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.unlocked-file-box img {
+  max-height: 280px;
+  width: 100%;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  background: #050505;
+}
+
+.unlocked-file-box .button {
+  width: fit-content;
 }
 
 .proof-actions {

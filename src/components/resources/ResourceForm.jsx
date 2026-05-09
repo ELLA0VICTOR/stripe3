@@ -6,6 +6,8 @@ import { createProduct } from "../../lib/stripe3Program";
 import { slugifyResourceId, solToLamports } from "../../lib/utils";
 import { Button, Field, Panel, Select, TextArea, TextInput } from "../ui";
 
+const MAX_FILE_BYTES = 25 * 1024 * 1024;
+
 const typeLabels = {
   api: "API",
   agent: "AI tool",
@@ -20,6 +22,15 @@ const typeLabels = {
   plugin: "Plugin",
 };
 
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || "").split(",")[1] || "");
+    reader.onerror = () => reject(new Error("Unable to read selected file."));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function ResourceForm({ mode = "devnet", onResourceCreated }) {
   const wallet = useAnchorWallet();
   const networkConfig = getStripe3Network(mode);
@@ -30,6 +41,7 @@ export function ResourceForm({ mode = "devnet", onResourceCreated }) {
   const [price, setPrice] = useState("0.003");
   const [description, setDescription] = useState("");
   const [protectedContent, setProtectedContent] = useState("");
+  const [protectedFile, setProtectedFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -46,6 +58,25 @@ export function ResourceForm({ mode = "devnet", onResourceCreated }) {
 
     try {
       setSubmitting(true);
+      let filePayload = null;
+
+      if (protectedFile) {
+        if (protectedFile.size > MAX_FILE_BYTES) {
+          throw new Error("File is too large. Max upload size is 25 MB.");
+        }
+
+        filePayload = {
+          name: protectedFile.name,
+          type: protectedFile.type || "application/octet-stream",
+          size: protectedFile.size,
+          dataBase64: await fileToBase64(protectedFile),
+        };
+      }
+
+      if (!protectedContent.trim() && !filePayload) {
+        throw new Error("Add protected text, upload a file, or both.");
+      }
+
       const resource = {
         id: slugifyResourceId(title),
         title: title.trim(),
@@ -63,6 +94,7 @@ export function ResourceForm({ mode = "devnet", onResourceCreated }) {
       const product = await createProduct({ connection, wallet, resource });
       const savedResource = await registerResource({
         ...resource,
+        protectedFile: filePayload,
         productPda: product.product,
         creationSignature: product.signature,
       });
@@ -75,6 +107,7 @@ export function ResourceForm({ mode = "devnet", onResourceCreated }) {
       setPrice("0.003");
       setDescription("");
       setProtectedContent("");
+      setProtectedFile(null);
     } catch (formError) {
       setError(formError.message || "Unable to create product.");
     } finally {
@@ -147,9 +180,25 @@ export function ResourceForm({ mode = "devnet", onResourceCreated }) {
           <TextArea
             value={protectedContent}
             onChange={(event) => setProtectedContent(event.target.value)}
-            placeholder="Paste the private response, link, API credential note, or dataset instructions buyers should receive."
-            required
+            placeholder="Paste a private response, link, API credential note, or download instructions."
           />
+        </Field>
+        <Field label="Protected file" className="form-wide">
+            <div className="file-upload-row">
+              <input
+                key={protectedFile ? protectedFile.name : "empty-file"}
+                className="file-input"
+                type="file"
+                onChange={(event) => setProtectedFile(event.target.files?.[0] || null)}
+              />
+            {protectedFile && (
+              <div className="file-summary">
+                <span>{protectedFile.name}</span>
+                <strong>{(protectedFile.size / 1024 / 1024).toFixed(2)} MB</strong>
+                <button type="button" onClick={() => setProtectedFile(null)}>Remove</button>
+              </div>
+            )}
+          </div>
         </Field>
         <div className="form-submit">
           <Button type="submit" disabled={submitting}>
