@@ -1347,7 +1347,13 @@ canvas {
 
   .topbar {
     min-height: auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     padding: 14px;
+  }
+
+  .brand {
+    grid-column: 1;
+    grid-row: 1;
   }
 
   .brand {
@@ -1360,6 +1366,8 @@ canvas {
   }
 
   .site-nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
     width: 100%;
   }
 
@@ -1368,14 +1376,56 @@ canvas {
     padding-inline: 6px;
   }
 
-  .topbar-actions,
   .hero-actions {
     width: 100%;
+  }
+
+  .topbar-actions {
+    display: contents;
+  }
+
+  .topbar-actions .wallet-adapter-dropdown,
+  .topbar-actions > .wallet-connect-button {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+    max-width: 48vw;
+  }
+
+  .topbar-actions .mode-badge {
+    grid-column: 1;
+    grid-row: 3;
+    justify-self: start;
+    width: auto;
+    max-width: 100%;
+  }
+
+  .topbar-actions > .button {
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: end;
+    width: auto;
   }
 
   .button {
     width: 100%;
     min-height: 44px;
+  }
+
+  .topbar .button {
+    width: auto;
+  }
+
+  .topbar .wallet-connect-button.wallet-adapter-button,
+  .topbar .wallet-connect-button.wallet-adapter-button-trigger,
+  .wallet-adapter-dropdown .wallet-connect-button.wallet-adapter-button,
+  .wallet-adapter-dropdown .wallet-connect-button.wallet-adapter-button-trigger {
+    max-width: 48vw;
+    min-height: 38px;
+    padding-inline: 12px;
+    overflow: hidden;
+    justify-content: center;
   }
 
   .landing-strip,
@@ -1476,21 +1526,15 @@ canvas {
     padding-inline: 10px;
   }
 
-  .topbar-actions {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
   .mode-badge {
-    width: 100%;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .topbar .wallet-connect-button.wallet-adapter-button,
   .topbar .wallet-connect-button.wallet-adapter-button-trigger,
   .wallet-adapter-dropdown .wallet-connect-button.wallet-adapter-button,
   .wallet-adapter-dropdown .wallet-connect-button.wallet-adapter-button-trigger {
-    width: 100%;
+    width: auto;
     justify-content: center;
   }
 
