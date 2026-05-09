@@ -1,5 +1,5 @@
 import { formatSolanaNetwork } from "../../lib/networks";
-import { formatAddress, formatLamports } from "../../lib/utils";
+import { formatAddress, formatLamports, getSolanaExplorerUrl } from "../../lib/utils";
 import { Badge, DataLine, Panel } from "../ui";
 
 function stepStatus(index, activeStep) {
@@ -9,6 +9,7 @@ function stepStatus(index, activeStep) {
 }
 
 export function AgentConsole({ resource, mode, paymentResult, activeStep = 0 }) {
+  const network = resource.network || (mode === "production" ? "solana-mainnet" : "solana-devnet");
   const steps = [
     {
       label: "Request",
@@ -49,11 +50,36 @@ export function AgentConsole({ resource, mode, paymentResult, activeStep = 0 }) 
 
       <div className="data-list">
         <DataLine label="Amount" value={formatLamports(resource.priceLamports)} />
-        <DataLine label="Network" value={formatSolanaNetwork(resource.network || (mode === "production" ? "solana-mainnet" : "solana-devnet"))} />
+        <DataLine label="Network" value={formatSolanaNetwork(network)} />
         <DataLine label="Endpoint" value={resource.endpoint} />
         <DataLine label="Receipt" value={paymentResult?.receipt ? formatAddress(paymentResult.receipt) : "Pending"} />
         <DataLine label="Signature" value={paymentResult?.signature ? formatAddress(paymentResult.signature) : "Existing receipt"} />
       </div>
+
+      {(paymentResult?.receipt || paymentResult?.signature) && (
+        <div className="proof-actions">
+          {paymentResult?.receipt && (
+            <a
+              className="proof-link"
+              href={getSolanaExplorerUrl(paymentResult.receipt, network)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View receipt
+            </a>
+          )}
+          {paymentResult?.signature && (
+            <a
+              className="proof-link"
+              href={getSolanaExplorerUrl(paymentResult.signature, network, "tx")}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View transaction
+            </a>
+          )}
+        </div>
+      )}
 
       <div className="timeline">
         {steps.map((step, index) => {

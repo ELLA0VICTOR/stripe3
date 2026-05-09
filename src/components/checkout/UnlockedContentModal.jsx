@@ -1,17 +1,20 @@
 import { useState } from "react";
-import { formatAddress } from "../../lib/utils";
+import { formatAddress, formatLamports, getSolanaExplorerUrl } from "../../lib/utils";
 import { Badge, Button, DataLine, Panel } from "../ui";
 
 function getUnlockedContent(paymentResult) {
   return paymentResult?.unlock?.payload?.signal || "Unlocked content is available.";
 }
 
-export function UnlockedContentModal({ paymentResult, onClose }) {
+export function UnlockedContentModal({ paymentResult, resource, onClose }) {
   const [copied, setCopied] = useState(false);
 
   if (!paymentResult) return null;
 
   const content = getUnlockedContent(paymentResult);
+  const paidResource = resource || paymentResult.resource;
+  const network = paidResource?.network || paymentResult.settlement?.network || "solana-devnet";
+  const productPda = paymentResult.product || paidResource?.productPda;
 
   async function copyContent() {
     if (!navigator.clipboard) return;
@@ -45,8 +48,43 @@ export function UnlockedContentModal({ paymentResult, onClose }) {
         </div>
 
         <div className="data-list mt-5">
+          {paidResource && <DataLine label="Resource" value={paidResource.title} />}
+          {paidResource && <DataLine label="Amount" value={formatLamports(paidResource.priceLamports)} />}
           <DataLine label="Receipt" value={paymentResult.receipt ? formatAddress(paymentResult.receipt) : "Verified"} />
           <DataLine label="Signature" value={paymentResult.signature ? formatAddress(paymentResult.signature) : "Existing receipt"} />
+        </div>
+
+        <div className="proof-actions">
+          {paymentResult.receipt && (
+            <a
+              className="proof-link"
+              href={getSolanaExplorerUrl(paymentResult.receipt, network)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View receipt
+            </a>
+          )}
+          {paymentResult.signature && (
+            <a
+              className="proof-link"
+              href={getSolanaExplorerUrl(paymentResult.signature, network, "tx")}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View transaction
+            </a>
+          )}
+          {productPda && (
+            <a
+              className="proof-link"
+              href={getSolanaExplorerUrl(productPda, network)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View product
+            </a>
+          )}
         </div>
 
         <div className="modal-actions single">

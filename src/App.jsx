@@ -5,6 +5,7 @@ import { CookieConsent } from "./components/layout/CookieConsent";
 import { PaymentModal } from "./components/checkout/PaymentModal";
 import { UnlockedContentModal } from "./components/checkout/UnlockedContentModal";
 import { TakeDownResourceModal } from "./components/resources/TakeDownResourceModal";
+import { ResourceIntegrationModal } from "./components/resources/ResourceIntegrationModal";
 import { resources as seededResources } from "./lib/data";
 import { fetchResources, takeDownResource } from "./lib/gatewayClient";
 import { createStripe3Connection } from "./lib/networks";
@@ -34,6 +35,7 @@ function App() {
   const [paymentStarted, setPaymentStarted] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
   const [showUnlockedContent, setShowUnlockedContent] = useState(false);
+  const [integrationResource, setIntegrationResource] = useState(null);
   const [takeDownCandidate, setTakeDownCandidate] = useState(null);
   const [takingDownResourceId, setTakingDownResourceId] = useState("");
   const unlockTimerRef = useRef(null);
@@ -89,8 +91,10 @@ function App() {
   }
 
   function confirmPayment(result) {
+    const paidResource = getResourceById(resourceList, paymentResourceId || selectedResourceId);
+
     setPaymentResourceId(null);
-    setPaymentResult(result);
+    setPaymentResult({ ...result, resource: paidResource });
     setPaymentStarted(true);
     setShowUnlockedContent(false);
     setActivePage("agent");
@@ -167,6 +171,7 @@ function App() {
         resourcesError={resourcesError}
         onResourceCreated={handleResourceCreated}
         onPurchaseResource={openPayment}
+        onViewIntegration={setIntegrationResource}
         onTakeDownResource={handleTakeDownResource}
         takingDownResourceId={takingDownResourceId}
       />
@@ -182,9 +187,14 @@ function App() {
         onCancel={() => setTakeDownCandidate(null)}
         onConfirm={confirmTakeDownResource}
       />
+      <ResourceIntegrationModal
+        resource={integrationResource}
+        onClose={() => setIntegrationResource(null)}
+      />
       {showUnlockedContent && (
         <UnlockedContentModal
           paymentResult={paymentResult}
+          resource={paymentResult?.resource || selectedResource}
           onClose={() => setShowUnlockedContent(false)}
         />
       )}

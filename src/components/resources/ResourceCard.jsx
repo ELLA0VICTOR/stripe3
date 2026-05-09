@@ -4,7 +4,7 @@ import { formatSolanaNetwork } from "../../lib/networks";
 import { formatAddress, formatLamports } from "../../lib/utils";
 import { Badge, Button, DataLine, Panel } from "../ui";
 
-export function ResourceCard({ resource, onPurchaseResource, onTakeDownResource, takingDown }) {
+export function ResourceCard({ resource, onPurchaseResource, onViewIntegration, onTakeDownResource, takingDown }) {
   const { publicKey } = useWallet();
   const sellerCanManage = publicKey?.toBase58() === resource.merchant;
 
@@ -38,7 +38,8 @@ export function ResourceCard({ resource, onPurchaseResource, onTakeDownResource,
 
       <div className={`resource-actions ${sellerCanManage ? "has-management" : ""}`}>
         <Button onClick={() => onPurchaseResource(resource.id)}>Purchase access</Button>
-        <Button variant="secondary" onClick={copyEndpoint}>Copy x402 URL</Button>
+        <Button variant="secondary" onClick={() => onViewIntegration(resource)}>Integration</Button>
+        <Button variant="secondary" onClick={copyEndpoint}>Copy URL</Button>
         {sellerCanManage && (
           <Button
             variant="ghost"

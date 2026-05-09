@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { fetchReceiptsForBuyer } from "../lib/gatewayClient";
-import { formatAddress, formatLamports } from "../lib/utils";
+import { formatAddress, formatLamports, getSolanaExplorerUrl } from "../lib/utils";
 import { Badge, Button, DataLine, Panel } from "../components/ui";
 import { EmptyNotice } from "../components/ui/EmptyNotice";
 
@@ -96,6 +96,23 @@ export function Receipts({ mode = "devnet" }) {
               <DataLine label="Buyer" value={formatAddress(receipt.buyer)} />
               <DataLine label="Receipt PDA" value={receipt.pda} />
               <DataLine label="Source" value={receipt.source || "solana"} />
+            </div>
+            <div className="proof-actions">
+              <a
+                className="proof-link"
+                href={getSolanaExplorerUrl(receipt.pda, receipt.network)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                View receipt
+              </a>
+              <button
+                className="proof-link"
+                type="button"
+                onClick={() => navigator.clipboard?.writeText(receipt.pda)}
+              >
+                Copy PDA
+              </button>
             </div>
           </Panel>
         ))}

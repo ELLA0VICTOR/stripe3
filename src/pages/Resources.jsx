@@ -7,10 +7,13 @@ export function Resources({
   resourcesLoading,
   resourcesError,
   onPurchaseResource,
+  onViewIntegration,
   onResourceCreated,
   onTakeDownResource,
   takingDownResourceId,
 }) {
+  const liveResources = resources.filter((resource) => resource.status === "Live").length;
+
   return (
     <div className="page-stack">
       <header className="page-header">
@@ -25,6 +28,21 @@ export function Resources({
           </p>
         </div>
       </header>
+
+      <section className="resource-summary">
+        <div>
+          <span>Live resources</span>
+          <strong>{liveResources}</strong>
+        </div>
+        <div>
+          <span>Network mode</span>
+          <strong>{mode === "production" ? "Production" : "Devnet"}</strong>
+        </div>
+        <div>
+          <span>Gateway</span>
+          <strong>x402 + Solana receipts</strong>
+        </div>
+      </section>
 
       {resourcesError && (
         <div className="form-status error">
@@ -47,6 +65,7 @@ export function Resources({
             key={resource.id}
             resource={resource}
             onPurchaseResource={onPurchaseResource}
+            onViewIntegration={onViewIntegration}
             onTakeDownResource={onTakeDownResource}
             takingDown={takingDownResourceId === resource.id}
           />

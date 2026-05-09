@@ -11,6 +11,14 @@ export function formatLamports(lamports) {
   return `${(Number(lamports) / 1_000_000_000).toFixed(4)} SOL`;
 }
 
+export function getSolanaExplorerUrl(value, network = "solana-devnet", type = "address") {
+  if (!value) return "";
+
+  const route = type === "tx" ? "tx" : "address";
+  const cluster = network === "solana-mainnet" ? "" : "?cluster=devnet";
+  return `https://explorer.solana.com/${route}/${value}${cluster}`;
+}
+
 export function getResourceById(resources, id) {
   return resources.find((resource) => resource.id === id) || resources[0] || null;
 }
