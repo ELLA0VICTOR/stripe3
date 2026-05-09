@@ -1,5 +1,5 @@
 import { LiFiFundingPanel } from "../components/funding/LiFiFundingPanel";
-import { Badge, Button, DataLine, Panel } from "../components/ui";
+import { Button, Panel } from "../components/ui";
 
 export function Funding({ mode = "devnet", onModeChange }) {
   const production = mode === "production";
@@ -24,31 +24,15 @@ export function Funding({ mode = "devnet", onModeChange }) {
         )}
       </header>
 
-      <section className="funding-page-grid">
-        <Panel className="funding-brief">
-          <Badge tone={production ? "green" : "yellow"}>
-            {production ? "Production ready" : "Production mode required"}
-          </Badge>
-          <h2>Solana funding</h2>
-          <div className="data-list">
-            <DataLine label="Provider" value="LI.FI" />
-            <DataLine label="Destination" value="Solana mainnet" />
-            <DataLine label="Use case" value="Fund checkout wallet" />
+      <Panel className="funding-widget-panel">
+        {production ? (
+          <LiFiFundingPanel />
+        ) : (
+          <div className="funding-locked">
+            <Button onClick={onModeChange}>Open Production Funding</Button>
           </div>
-          {!production && <Button onClick={onModeChange}>Open Production Funding</Button>}
-        </Panel>
-
-        <Panel className="funding-widget-panel">
-          {production ? (
-            <LiFiFundingPanel />
-          ) : (
-            <div className="funding-locked">
-              <div className="panel-title">LI.FI is shown in Production mode</div>
-              <Button onClick={onModeChange}>Open Production Funding</Button>
-            </div>
-          )}
-        </Panel>
-      </section>
+        )}
+      </Panel>
     </div>
   );
 }
