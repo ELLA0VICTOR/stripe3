@@ -1,14 +1,11 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import { requestPaymentTerms, unlockProtectedResource } from "../../lib/gatewayClient";
 import { createStripe3Connection, getStripe3Network } from "../../lib/networks";
 import { formatLamports } from "../../lib/utils";
 import { payForResource } from "../../lib/stripe3Program";
+import { LiFiFundingPanel } from "../funding/LiFiFundingPanel";
 import { Badge, Button, DataLine, Panel } from "../ui";
-
-const LiFiWidget = lazy(() =>
-  import("@lifi/widget").then((module) => ({ default: module.LiFiWidget })),
-);
 
 export function PaymentModal({ resource, mode, onClose, onConfirm }) {
   const wallet = useAnchorWallet();
@@ -120,28 +117,7 @@ export function PaymentModal({ resource, mode, onClose, onConfirm }) {
         </div>
 
         {showFunding && (
-          <div className="lifi-widget-shell">
-            <Suspense fallback={<div className="panel-copy">Loading LI.FI routes...</div>}>
-              <LiFiWidget
-                integrator="stripe3"
-                config={{
-                  appearance: "dark",
-                  variant: "compact",
-                  theme: {
-                    container: {
-                      border: "1px solid rgba(255, 255, 255, 0.18)",
-                      borderRadius: "0px",
-                      boxShadow: "none",
-                    },
-                    palette: {
-                      primary: { main: "#3399ff" },
-                      background: { paper: "#030303", default: "#030303" },
-                    },
-                  },
-                }}
-              />
-            </Suspense>
-          </div>
+          <LiFiFundingPanel />
         )}
 
         <div className="modal-actions">

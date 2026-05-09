@@ -828,6 +828,56 @@ canvas {
   min-height: 560px;
 }
 
+.funding-page-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.72fr) minmax(320px, 1.28fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.funding-brief h2 {
+  margin-top: 18px;
+  color: var(--text-primary);
+  font-size: clamp(24px, 3vw, 38px);
+  line-height: 0.96;
+  letter-spacing: -0.07em;
+  font-weight: 950;
+}
+
+.funding-brief p,
+.funding-locked p {
+  margin-top: 14px;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.7;
+  font-weight: 800;
+}
+
+.funding-widget-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.funding-widget-panel .lifi-widget-shell {
+  margin-top: 0;
+  border: 0;
+  height: clamp(560px, 74vh, 760px);
+}
+
+.funding-locked {
+  min-height: 520px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+}
+
+.funding-locked .panel-copy {
+  max-width: 460px;
+}
+
 .funding-note button {
   border: 0;
   background: transparent;
@@ -1365,6 +1415,7 @@ canvas {
   .feature-matrix,
   .section-grid,
   .activity-grid,
+  .funding-page-grid,
   .resource-form,
   .page-header {
     grid-template-columns: 1fr;
@@ -1564,6 +1615,10 @@ canvas {
 
   .lifi-widget-shell > div {
     min-height: 520px;
+  }
+
+  .funding-widget-panel .lifi-widget-shell {
+    height: min(620px, calc(100dvh - 210px));
   }
 
   .modal-actions {

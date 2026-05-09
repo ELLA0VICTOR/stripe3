@@ -14,12 +14,14 @@ import { setProductActive } from "./lib/stripe3Program";
 import { getResourceById } from "./lib/utils";
 import { Landing } from "./pages/Landing";
 import { Resources } from "./pages/Resources";
+import { Funding } from "./pages/Funding";
 import { AgentMode } from "./pages/AgentMode";
 import { Receipts } from "./pages/Receipts";
 
 const pageMap = {
   landing: Landing,
   resources: Resources,
+  funding: Funding,
   agent: AgentMode,
   receipts: Receipts,
 };
@@ -73,13 +75,13 @@ function App({ mode, setMode }) {
       }
     }
 
-    if (!walletConnected) return undefined;
+    if (!walletConnected || activePage !== "resources") return undefined;
 
     loadResources();
     return () => {
       active = false;
     };
-  }, [mode, walletConnected]);
+  }, [mode, walletConnected, activePage]);
 
   useEffect(() => () => {
     if (unlockTimerRef.current) window.clearTimeout(unlockTimerRef.current);

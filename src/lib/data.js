@@ -2,8 +2,9 @@ export const defaultMerchant = "7TFtVd1e5DSaonVSGP73GPKe78w2EmkL5LrkjGGL6PDH";
 
 export const navItems = [
   { id: "resources", label: "Resources", glyph: "01" },
-  { id: "agent", label: "Activity", glyph: "02" },
-  { id: "receipts", label: "Receipts", glyph: "03" },
+  { id: "funding", label: "Funding", glyph: "02" },
+  { id: "agent", label: "Activity", glyph: "03" },
+  { id: "receipts", label: "Receipts", glyph: "04" },
 ];
 
 export const networkModes = {
