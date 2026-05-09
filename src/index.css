@@ -1705,6 +1705,15 @@ canvas {
     grid-template-columns: 1fr;
   }
 
+  .file-summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .file-summary button {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
   .resource-summary {
     grid-template-columns: 1fr;
   }
@@ -1849,6 +1858,15 @@ canvas {
 
   .unlocked-content-box {
     max-height: 38vh;
+  }
+
+  .file-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .file-summary strong,
+  .file-summary button {
+    justify-self: start;
   }
 
   .lifi-widget-shell {
