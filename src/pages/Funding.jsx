@@ -5,17 +5,14 @@ export function Funding({ mode = "devnet", onModeChange }) {
   const production = mode === "production";
 
   return (
-    <div className="page-stack">
+    <div className="page-stack funding-page">
       <header className="page-header">
         <div>
           <div className="page-kicker">
             <span className="dot" />
-            Production funding
+            LI.FI funding
           </div>
-          <h1 className="page-title">Bridge into Solana before checkout.</h1>
-          <p className="page-copy">
-            Use LI.FI to bridge or swap from supported chains into a Solana wallet.
-          </p>
+          <h1 className="page-title">Bridge into Solana.</h1>
         </div>
         {!production && (
           <Button variant="secondary" onClick={onModeChange}>

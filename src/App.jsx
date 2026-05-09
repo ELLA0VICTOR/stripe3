@@ -208,10 +208,12 @@ function App({ mode, setMode }) {
           onClose={() => setShowUnlockedContent(false)}
         />
       )}
-      <footer className="site-footer">
-        <span>stripe3 / x402 payment gateway for Solana resources</span>
-        <span>Need Solana funds? Fund through LI.FI in production.</span>
-      </footer>
+      {activePage !== "funding" && (
+        <footer className="site-footer">
+          <span>stripe3 / x402 payment gateway for Solana resources</span>
+          <span>Need Solana funds? Fund through LI.FI in production.</span>
+        </footer>
+      )}
       <CookieConsent />
     </Layout>
   );
