@@ -815,22 +815,23 @@ canvas {
 
 .lifi-widget-shell {
   margin-top: 16px;
-  height: clamp(480px, 72vh, 720px);
+  height: clamp(560px, 78vh, 820px);
   min-height: 0;
-  overflow: auto;
+  overflow: hidden auto;
   border: 1px solid var(--line-strong);
   background: #030303;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .lifi-widget-shell > div {
   width: 100%;
-  min-height: 560px;
+  min-height: 640px;
 }
 
 .funding-page-grid {
   display: grid;
-  grid-template-columns: minmax(260px, 0.72fr) minmax(320px, 1.28fr);
+  grid-template-columns: minmax(220px, 0.48fr) minmax(420px, 1.52fr);
   gap: 18px;
   align-items: start;
 }
@@ -844,7 +845,6 @@ canvas {
   font-weight: 950;
 }
 
-.funding-brief p,
 .funding-locked p {
   margin-top: 14px;
   color: var(--text-muted);
@@ -853,19 +853,25 @@ canvas {
   font-weight: 800;
 }
 
+.funding-brief .button {
+  margin-top: 18px;
+  width: 100%;
+}
+
 .funding-widget-panel {
   padding: 0;
   overflow: hidden;
+  min-height: clamp(560px, 78vh, 820px);
 }
 
 .funding-widget-panel .lifi-widget-shell {
   margin-top: 0;
   border: 0;
-  height: clamp(560px, 74vh, 760px);
+  height: clamp(560px, 78vh, 820px);
 }
 
 .funding-locked {
-  min-height: 520px;
+  min-height: clamp(560px, 78vh, 820px);
   display: grid;
   place-items: center;
   align-content: center;
@@ -1618,7 +1624,7 @@ canvas {
   }
 
   .funding-widget-panel .lifi-widget-shell {
-    height: min(620px, calc(100dvh - 210px));
+    height: min(700px, calc(100dvh - 180px));
   }
 
   .modal-actions {
@@ -1733,7 +1739,7 @@ canvas {
   }
 
   .lifi-widget-shell {
-    height: min(570px, calc(100dvh - 235px));
+    height: min(640px, calc(100dvh - 190px));
     min-height: 380px;
   }
 

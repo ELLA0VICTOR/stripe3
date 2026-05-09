@@ -14,7 +14,7 @@ export function Funding({ mode = "devnet", onModeChange }) {
           </div>
           <h1 className="page-title">Bridge into Solana before checkout.</h1>
           <p className="page-copy">
-            LI.FI gives buyers a route from supported chains into Solana. This funding path is independent from devnet payment testing.
+            Use LI.FI to bridge or swap from supported chains into a Solana wallet.
           </p>
         </div>
         {!production && (
@@ -27,17 +27,15 @@ export function Funding({ mode = "devnet", onModeChange }) {
       <section className="funding-page-grid">
         <Panel className="funding-brief">
           <Badge tone={production ? "green" : "yellow"}>
-            {production ? "Mainnet routes" : "Devnet demo"}
+            {production ? "Production ready" : "Production mode required"}
           </Badge>
-          <h2>Why this is separate</h2>
-          <p>
-            stripe3 uses devnet for the full x402 demo. LI.FI runs on production liquidity, so it can be shown as the mainnet funding rail without creating a mainnet product first.
-          </p>
+          <h2>Solana funding</h2>
           <div className="data-list">
-            <DataLine label="Payment demo" value="Solana devnet" />
-            <DataLine label="Funding demo" value="LI.FI mainnet" />
-            <DataLine label="Destination" value="Solana wallet" />
+            <DataLine label="Provider" value="LI.FI" />
+            <DataLine label="Destination" value="Solana mainnet" />
+            <DataLine label="Use case" value="Fund checkout wallet" />
           </div>
+          {!production && <Button onClick={onModeChange}>Open Production Funding</Button>}
         </Panel>
 
         <Panel className="funding-widget-panel">
@@ -46,9 +44,6 @@ export function Funding({ mode = "devnet", onModeChange }) {
           ) : (
             <div className="funding-locked">
               <div className="panel-title">LI.FI is shown in Production mode</div>
-              <p className="panel-copy">
-                Switch mode to preview the bridge/swap widget. No mainnet stripe3 product is required for this funding demo.
-              </p>
               <Button onClick={onModeChange}>Open Production Funding</Button>
             </div>
           )}
