@@ -33,6 +33,11 @@ body,
   min-height: 100%;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   overflow-x: hidden;
@@ -90,8 +95,16 @@ a {
   text-decoration: none;
 }
 
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
 .app-shell {
   min-height: 100vh;
+  overflow-x: clip;
 }
 
 .topbar {
@@ -107,6 +120,7 @@ a {
   position: sticky;
   top: 0;
   z-index: 40;
+  width: 100%;
 }
 
 .brand {
@@ -119,6 +133,7 @@ a {
   font-size: clamp(20px, 2.4vw, 26px);
   font-weight: 800;
   letter-spacing: -0.045em;
+  min-width: 0;
 }
 
 .brand-mark {
@@ -150,6 +165,15 @@ a {
 .site-nav {
   justify-content: center;
   overflow-x: auto;
+  min-width: 0;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.topbar-actions {
+  justify-self: end;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 .mode-badge {
@@ -202,6 +226,7 @@ a {
 
 .main {
   padding: clamp(28px, 4vw, 56px) clamp(18px, 5vw, 72px) 64px;
+  min-width: 0;
 }
 
 .landing-main {
@@ -215,6 +240,7 @@ a {
 .content {
   width: min(100%, 1450px);
   margin: 0 auto;
+  min-width: 0;
 }
 
 .workspace-tabs {
@@ -224,6 +250,8 @@ a {
   border: 1px solid var(--line-strong);
   background: rgba(0, 0, 0, 0.32);
   margin-bottom: 32px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 .workspace-tabs button {
@@ -329,6 +357,7 @@ a {
   min-height: 380px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .terminal-top {
@@ -576,6 +605,7 @@ a {
 
 .resource-card {
   min-height: 100%;
+  min-width: 0;
 }
 
 .empty-resource-state {
@@ -623,6 +653,7 @@ a {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
+  min-width: 0;
 }
 
 .form-wide {
@@ -670,6 +701,7 @@ a {
   max-height: calc(100vh - 36px);
   overflow: auto;
   box-shadow: var(--shadow-soft);
+  overscroll-behavior: contain;
 }
 
 .payment-modal-wide {
@@ -738,16 +770,17 @@ a {
 
 .lifi-widget-shell {
   margin-top: 16px;
-  height: min(720px, calc(100vh - 220px));
-  min-height: 520px;
+  height: clamp(480px, 72vh, 720px);
+  min-height: 0;
   overflow: auto;
   border: 1px solid var(--line-strong);
   background: #030303;
+  overscroll-behavior: contain;
 }
 
 .lifi-widget-shell > div {
   width: 100%;
-  min-height: 620px;
+  min-height: 560px;
 }
 
 .funding-note button {
@@ -840,6 +873,7 @@ a {
 .unlocked-content-box pre {
   margin: 0;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
   word-break: break-word;
   color: var(--text-primary);
   font-size: 13px;
@@ -1097,6 +1131,7 @@ a {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  overflow-wrap: anywhere;
   color: var(--text-primary);
   font-size: 13px;
   font-weight: 800;
@@ -1110,6 +1145,7 @@ a {
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.65;
+  max-width: 100%;
 }
 
 .timeline {
@@ -1163,6 +1199,10 @@ a {
   color: var(--text-muted);
   font-size: 12px;
   font-weight: 900;
+}
+
+.wallet-adapter-dropdown {
+  max-width: 100%;
 }
 
 .trace-status.done {
@@ -1221,6 +1261,7 @@ a {
     grid-template-columns: 1fr;
     padding-top: 18px;
     padding-bottom: 18px;
+    gap: 16px;
   }
 
   .site-nav {
@@ -1229,6 +1270,8 @@ a {
   }
 
   .topbar-actions {
+    justify-self: stretch;
+    justify-content: flex-start;
     flex-wrap: wrap;
   }
 
@@ -1264,6 +1307,35 @@ a {
   }
 }
 
+@media (max-width: 900px) {
+  .page-header {
+    gap: 20px;
+  }
+
+  .hero-copy-block,
+  .matrix-copy {
+    padding-left: 18px;
+  }
+
+  .terminal-card {
+    min-height: auto;
+  }
+
+  .terminal-lines div {
+    min-height: 54px;
+  }
+
+  .resource-card .data-line {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 12px 0;
+  }
+
+  .payment-modal-wide {
+    width: min(100%, 720px);
+  }
+}
+
 @media (max-width: 760px) {
   body {
     font-size: 14px;
@@ -1273,12 +1345,27 @@ a {
     padding: 32px 14px 64px;
   }
 
+  .topbar {
+    min-height: auto;
+    padding: 14px;
+  }
+
+  .brand {
+    font-size: 22px;
+  }
+
+  .brand-mark {
+    width: 31px;
+    height: 31px;
+  }
+
   .site-nav {
     width: 100%;
   }
 
   .site-nav button {
     font-size: 13px;
+    padding-inline: 6px;
   }
 
   .topbar-actions,
@@ -1288,6 +1375,7 @@ a {
 
   .button {
     width: 100%;
+    min-height: 44px;
   }
 
   .landing-strip,
@@ -1309,6 +1397,24 @@ a {
 
   .resource-actions.has-management {
     grid-template-columns: 1fr;
+  }
+
+  .modal-backdrop {
+    align-items: start;
+    padding: 10px;
+  }
+
+  .payment-modal {
+    max-height: calc(100dvh - 20px);
+  }
+
+  .lifi-widget-shell {
+    height: min(620px, calc(100dvh - 250px));
+    min-height: 430px;
+  }
+
+  .lifi-widget-shell > div {
+    min-height: 520px;
   }
 
   .modal-actions {
@@ -1358,5 +1464,77 @@ a {
 
   .cookie-options small {
     grid-column: 2;
+  }
+}
+
+@media (max-width: 520px) {
+  body::before {
+    background-size: 56px 56px;
+  }
+
+  .main {
+    padding-inline: 10px;
+  }
+
+  .topbar-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .mode-badge {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .topbar .wallet-connect-button.wallet-adapter-button,
+  .topbar .wallet-connect-button.wallet-adapter-button-trigger,
+  .wallet-adapter-dropdown .wallet-connect-button.wallet-adapter-button,
+  .wallet-adapter-dropdown .wallet-connect-button.wallet-adapter-button-trigger {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hero-title {
+    font-size: clamp(28px, 11vw, 38px);
+  }
+
+  .page-title {
+    font-size: clamp(24px, 9vw, 32px);
+  }
+
+  .hero-copy,
+  .page-copy {
+    font-size: 13px;
+  }
+
+  .panel.pad {
+    padding: 16px;
+  }
+
+  .modal-head {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-close {
+    justify-self: start;
+    order: -1;
+  }
+
+  .unlocked-content-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .unlocked-content-box {
+    max-height: 38vh;
+  }
+
+  .lifi-widget-shell {
+    height: min(570px, calc(100dvh - 235px));
+    min-height: 380px;
+  }
+
+  .cookie-options label {
+    align-items: start;
   }
 }

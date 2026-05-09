@@ -17,7 +17,7 @@ export function Dashboard({ mode, resources = [] }) {
             Monitor protected resources, invoices, receipts, and the production LI.FI funding path from one workspace.
           </p>
         </div>
-        <Panel className="min-w-[320px]">
+        <Panel>
           <Badge tone={mode === "devnet" ? "blue" : "green"}>{activeMode.label}</Badge>
           <div className="data-list mt-7">
             <DataLine label="Network" value={activeMode.network} />
