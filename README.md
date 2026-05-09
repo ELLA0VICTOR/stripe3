@@ -371,6 +371,6 @@ Reserved program ID: 9FMFBdiH5dY91hUZ9sz4qqLRKTZhR7v29YPAnnU3VvcW
 9. Open receipts to verify the on-chain access proof.
 10. Switch to production mode to show LI.FI funding for the mainnet launch path.
 
-## Notes For Judges
+## Notes:
 
 The core payment and receipt system is functional on Solana devnet. Production mode is implemented as the mainnet-ready path, including LI.FI funding, while the actual mainnet program deployment is reserved for launch funding because it requires real SOL.
