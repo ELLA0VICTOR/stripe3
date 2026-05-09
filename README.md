@@ -325,7 +325,7 @@ Mainnet deployment is intentionally left as a final launch step because Solana m
 When ready:
 
 ```bash
-cd /mnt/c/Users/Victor/Desktop/stripe3
+cd to "your path"
 
 RPC_URL="<YOUR_MAINNET_RPC_URL>"
 PROGRAM_ID="9FMFBdiH5dY91hUZ9sz4qqLRKTZhR7v29YPAnnU3VvcW"
