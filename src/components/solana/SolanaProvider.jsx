@@ -5,8 +5,9 @@ import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { useStandardWalletAdapters } from "@solana/wallet-standard-wallet-adapter-react";
 import { getStripe3Network } from "../../lib/networks";
 
-export function SolanaProvider({ children }) {
-  const endpoint = getStripe3Network("devnet").rpcUrl || clusterApiUrl("devnet");
+export function SolanaProvider({ children, mode = "devnet" }) {
+  const network = getStripe3Network(mode);
+  const endpoint = network.rpcUrl || clusterApiUrl(network.cluster);
   const fallbackAdapters = useMemo(() => [], []);
   const wallets = useStandardWalletAdapters(fallbackAdapters);
 

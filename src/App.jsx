@@ -24,11 +24,10 @@ const pageMap = {
   receipts: Receipts,
 };
 
-function App() {
+function App({ mode, setMode }) {
   const wallet = useAnchorWallet();
   const walletConnected = Boolean(wallet?.publicKey);
   const [activePage, setActivePage] = useState("landing");
-  const [mode, setMode] = useState("devnet");
   const [resourceList, setResourceList] = useState(seededResources);
   const [resourcesLoading, setResourcesLoading] = useState(false);
   const [resourcesError, setResourcesError] = useState("");
