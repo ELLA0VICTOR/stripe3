@@ -6,6 +6,7 @@ import { PaymentModal } from "./components/checkout/PaymentModal";
 import { UnlockedContentModal } from "./components/checkout/UnlockedContentModal";
 import { TakeDownResourceModal } from "./components/resources/TakeDownResourceModal";
 import { ResourceIntegrationModal } from "./components/resources/ResourceIntegrationModal";
+import { WalletGate } from "./components/layout/WalletGate";
 import { resources as seededResources } from "./lib/data";
 import { fetchResources, takeDownResource } from "./lib/gatewayClient";
 import { createStripe3Connection } from "./lib/networks";
@@ -25,6 +26,7 @@ const pageMap = {
 
 function App() {
   const wallet = useAnchorWallet();
+  const walletConnected = Boolean(wallet?.publicKey);
   const [activePage, setActivePage] = useState("landing");
   const [mode, setMode] = useState("devnet");
   const [resourceList, setResourceList] = useState(seededResources);
@@ -47,6 +49,7 @@ function App() {
   );
 
   const Page = pageMap[activePage] || Landing;
+  const pageLocked = activePage !== "landing" && !walletConnected;
 
   useEffect(() => {
     let active = true;
@@ -71,11 +74,13 @@ function App() {
       }
     }
 
+    if (!walletConnected) return undefined;
+
     loadResources();
     return () => {
       active = false;
     };
-  }, [mode]);
+  }, [mode, walletConnected]);
 
   useEffect(() => () => {
     if (unlockTimerRef.current) window.clearTimeout(unlockTimerRef.current);
@@ -159,39 +164,43 @@ function App() {
       mode={mode}
       onModeChange={toggleMode}
     >
-      <Page
-        mode={mode}
-        onModeChange={toggleMode}
-        setActivePage={setActivePage}
-        resource={selectedResource}
-        paymentStarted={paymentStarted}
-        paymentResult={paymentResult}
-        resources={resourceList}
-        resourcesLoading={resourcesLoading}
-        resourcesError={resourcesError}
-        onResourceCreated={handleResourceCreated}
-        onPurchaseResource={openPayment}
-        onViewIntegration={setIntegrationResource}
-        onTakeDownResource={handleTakeDownResource}
-        takingDownResourceId={takingDownResourceId}
-      />
+      {pageLocked ? (
+        <WalletGate />
+      ) : (
+        <Page
+          mode={mode}
+          onModeChange={toggleMode}
+          setActivePage={setActivePage}
+          resource={selectedResource}
+          paymentStarted={paymentStarted}
+          paymentResult={paymentResult}
+          resources={resourceList}
+          resourcesLoading={resourcesLoading}
+          resourcesError={resourcesError}
+          onResourceCreated={handleResourceCreated}
+          onPurchaseResource={openPayment}
+          onViewIntegration={setIntegrationResource}
+          onTakeDownResource={handleTakeDownResource}
+          takingDownResourceId={takingDownResourceId}
+        />
+      )}
       <PaymentModal
-        resource={paymentResourceId ? getResourceById(resourceList, paymentResourceId) : null}
+        resource={walletConnected && paymentResourceId ? getResourceById(resourceList, paymentResourceId) : null}
         mode={mode}
         onClose={() => setPaymentResourceId(null)}
         onConfirm={confirmPayment}
       />
       <TakeDownResourceModal
-        resource={takeDownCandidate}
+        resource={walletConnected ? takeDownCandidate : null}
         busy={Boolean(takingDownResourceId)}
         onCancel={() => setTakeDownCandidate(null)}
         onConfirm={confirmTakeDownResource}
       />
       <ResourceIntegrationModal
-        resource={integrationResource}
+        resource={walletConnected ? integrationResource : null}
         onClose={() => setIntegrationResource(null)}
       />
-      {showUnlockedContent && (
+      {walletConnected && showUnlockedContent && (
         <UnlockedContentModal
           paymentResult={paymentResult}
           resource={paymentResult?.resource || selectedResource}

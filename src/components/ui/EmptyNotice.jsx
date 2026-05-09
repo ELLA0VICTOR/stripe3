@@ -1,6 +1,6 @@
 import { Panel } from "./index";
 
-export function EmptyNotice({ title, copy }) {
+export function EmptyNotice({ title, copy, children }) {
   return (
     <Panel className="empty-notice">
       <div className="empty-notice-icon" aria-hidden="true">
@@ -13,6 +13,7 @@ export function EmptyNotice({ title, copy }) {
       <div>
         <div className="panel-title">{title}</div>
         <p className="panel-copy">{copy}</p>
+        {children && <div className="empty-notice-actions">{children}</div>}
       </div>
     </Panel>
   );

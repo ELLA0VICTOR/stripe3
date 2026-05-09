@@ -995,6 +995,22 @@ canvas {
   margin: 10px auto 0;
 }
 
+.empty-notice-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 22px;
+}
+
+.wallet-gate-page {
+  min-height: 62vh;
+}
+
+.wallet-gate-button.wallet-adapter-button,
+.wallet-gate-button.wallet-adapter-button-trigger {
+  min-height: 48px;
+  padding: 0 22px;
+}
+
 .three-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
