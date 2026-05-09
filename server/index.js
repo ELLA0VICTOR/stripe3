@@ -38,6 +38,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.STRIPE3_DATA_DIR || path.join(__dirname, "..", ".data");
 const RESOURCE_STORE = path.join(DATA_DIR, "resources.json");
 const PRODUCT_ID_PATTERN = /^[a-z0-9][a-z0-9-]{2,31}$/;
+const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const SUPABASE_RESOURCES_TABLE = process.env.SUPABASE_RESOURCES_TABLE || "stripe3_resources";
+const USE_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
+const STORAGE_DRIVER = USE_SUPABASE ? "supabase" : "file";
 
 function networkFromMode(mode) {
   return mode === "production" ? "solana-mainnet" : "solana-devnet";
@@ -122,6 +127,32 @@ function cleanText(value, fallback = "", maxLength = 240) {
   return text.slice(0, maxLength);
 }
 
+async function supabaseRequest(pathname, options = {}) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${pathname}`, {
+    ...options,
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+  const text = await response.text();
+  let body;
+
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    body = text ? { error: text } : null;
+  }
+
+  if (!response.ok) {
+    throw new Error(body?.message || body?.error || `Supabase request failed with ${response.status}`);
+  }
+
+  return body;
+}
+
 function normalizeResource(input) {
   const id = cleanText(input.id, "", 32).toLowerCase();
   const title = cleanText(input.title, "", 80);
@@ -178,6 +209,11 @@ function hydrateResource(resource) {
 }
 
 async function readStoredResources() {
+  if (USE_SUPABASE) {
+    const rows = await supabaseRequest(`${SUPABASE_RESOURCES_TABLE}?select=resource&order=created_at.desc`);
+    return rows.map((row) => row.resource).filter(Boolean);
+  }
+
   try {
     const file = await fs.readFile(RESOURCE_STORE, "utf8");
     const parsed = JSON.parse(file);
@@ -191,6 +227,46 @@ async function readStoredResources() {
 async function writeStoredResources(resources) {
   await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.writeFile(RESOURCE_STORE, JSON.stringify(resources, null, 2));
+}
+
+async function saveStoredResource(resource) {
+  if (USE_SUPABASE) {
+    const row = {
+      id: resource.id,
+      network: resource.network,
+      merchant: resource.merchant,
+      product_pda: resource.productPda || null,
+      resource,
+    };
+
+    const saved = await supabaseRequest(`${SUPABASE_RESOURCES_TABLE}?on_conflict=id`, {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+      body: JSON.stringify(row),
+    });
+
+    return saved?.[0]?.resource || resource;
+  }
+
+  const storedResources = await readStoredResources();
+  await writeStoredResources([
+    resource,
+    ...storedResources.filter((item) => item.id !== resource.id),
+  ]);
+  return resource;
+}
+
+async function deleteStoredResource(resource) {
+  if (USE_SUPABASE) {
+    await supabaseRequest(
+      `${SUPABASE_RESOURCES_TABLE}?id=eq.${encodeURIComponent(resource.id)}&merchant=eq.${encodeURIComponent(resource.merchant)}`,
+      { method: "DELETE" },
+    );
+    return;
+  }
+
+  const storedResources = await readStoredResources();
+  await writeStoredResources(storedResources.filter((item) => item.id !== resource.id));
 }
 
 async function getAllResources(network) {
@@ -394,15 +470,13 @@ async function registerResource(body) {
     throw new Error("Product PDA was not found on-chain. Create the Solana product first.");
   }
 
-  const storedResources = await readStoredResources();
   const storedResource = {
     ...resource,
     productPda: productPda.toBase58(),
     creationSignature: cleanText(body.creationSignature, "", 120),
   };
 
-  await writeStoredResources([...storedResources, storedResource]);
-  return storedResource;
+  return saveStoredResource(storedResource);
 }
 
 async function takeDownResource(resourceId, body) {
@@ -436,8 +510,7 @@ async function takeDownResource(resourceId, body) {
     throw new Error("Product is still active on-chain. Sign the seller take-down transaction first.");
   }
 
-  const remainingResources = storedResources.filter((item) => item.id !== resource.id);
-  await writeStoredResources(remainingResources);
+  await deleteStoredResource(resource);
 
   return {
     ...resource,
@@ -454,7 +527,7 @@ async function handleRequest(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
 
   if (url.pathname === "/health") {
-    sendJson(res, 200, { ok: true, service: "stripe3-gateway" });
+    sendJson(res, 200, { ok: true, service: "stripe3-gateway", storage: STORAGE_DRIVER });
     return;
   }
 
@@ -593,5 +666,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  process.stdout.write(`stripe3 gateway running on http://localhost:${PORT}\n`);
+  process.stdout.write(`stripe3 gateway running on http://localhost:${PORT} using ${STORAGE_DRIVER} storage\n`);
 });

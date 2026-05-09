@@ -219,7 +219,7 @@ React frontend
   - LI.FI funding surface
 
 x402 gateway
-  - Resource catalog
+  - Supabase-backed resource catalog
   - Protected resource routes
   - Payment-required responses
   - Receipt verification
@@ -249,6 +249,8 @@ Solana program
 │   └── init-products.mjs
 ├── server
 │   └── index.js
+├── supabase
+│   └── stripe3_resources.sql
 ├── src
 │   ├── App.jsx
 │   ├── index.css
@@ -333,6 +335,30 @@ GET    /api/receipts
 
 Protected routes return `402 Payment Required` until the gateway can verify a valid receipt PDA for the buyer wallet.
 
+## Persistent Storage
+
+stripe3 keeps payment truth on Solana and catalog data in Supabase:
+
+- Product PDA: merchant, product ID, price, and active status.
+- Receipt PDA: buyer access proof after payment.
+- Supabase: resource title, description, endpoint, and protected payload.
+
+Create the Supabase table by running this file in the Supabase SQL editor:
+
+```text
+supabase/stripe3_resources.sql
+```
+
+Set these only on the backend service:
+
+```text
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_RESOURCES_TABLE
+```
+
+Do not expose the service role key in Vercel or any frontend environment. `STRIPE3_DATA_DIR` is only a local fallback when Supabase is not configured.
+
 ## Network Modes
 
 ```text
@@ -387,6 +413,9 @@ SOLANA_DEVNET_RPC_URL
 SOLANA_MAINNET_RPC_URL
 STRIPE3_DEVNET_PROGRAM_ID
 STRIPE3_MAINNET_PROGRAM_ID
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_RESOURCES_TABLE
 STRIPE3_DATA_DIR
 ```
 
